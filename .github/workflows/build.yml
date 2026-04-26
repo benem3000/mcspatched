@@ -12,6 +12,11 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref || github.run_id }}
   cancel-in-progress: true
 
+permissions:
+  contents: write
+  packages: write
+  id-token: write 
+
 jobs:
   # JOB 1: Build the Patched Kernel
   build-kernel:
