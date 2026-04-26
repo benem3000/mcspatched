@@ -90,7 +90,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: patched-kernel
-          path: ./kernel-rpms
+          path: ./files/kernel-rpms
 
       - name: Inject version number
         run: |
