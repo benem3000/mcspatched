@@ -6,7 +6,7 @@ name: bazzite-AX210-test
 description: MCS patched bazzite.
 
 base-image: ghcr.io/ublue-os/silverblue-main
-image-version: 42 # latest is also supported if you want new updates ASAP
+image-version: 43 # latest is also supported if you want new updates ASAP
 
 modules:
   - type: files
@@ -42,8 +42,8 @@ modules:
   - type: script
     snippets:
       - |
-        echo "Swapping to latest patched kernel RPMs..."
+        echo "Swapping to Patched AX210 Kernel..."
         rpm-ostree override replace \
-          /github/home/kernel-rpms/kernel-core-*.rpm \
-          /github/home/kernel-rpms/kernel-modules-*.rpm \
-          /github/home/kernel-rpms/kernel-modules-extra-*.rpm
+          ./kernel-rpms/kernel-core-*.rpm \
+          ./kernel-rpms/kernel-modules-*.rpm \
+          ./kernel-rpms/kernel-modules-extra-*.rpm
