@@ -1,4 +1,4 @@
-name: Patched Bazzite Build
+name: Generate Patched Bazzite Build
 on:
   schedule:
     - cron: "00 06 * * *"
@@ -48,7 +48,8 @@ jobs:
                          pahole perl-devel perl-generators rust rust-src rustfmt bindgen clippy \
                          gcc-c++ glibc-static hostname kernel-rpm-macros lvm2 \
                          net-tools nss-tools openssl pesign python3-devel \
-                         systemd-boot-unsigned systemd-ukify tpm2-tools which dracut elfutils-devel
+                         systemd-boot-unsigned systemd-ukify tpm2-tools which dracut elfutils-devel \
+                         dosfstools e2fsprogs xfsprogs # <--- ADDED THESE THREE HERE
 
           rpmdev-setuptree
           dnf download --source kernel
