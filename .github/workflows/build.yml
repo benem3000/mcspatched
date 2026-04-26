@@ -22,7 +22,7 @@ jobs:
   build-kernel:
     runs-on: ubuntu-latest
     container:
-      image: fedora:41
+      image: fedora:43
       options: --privileged
     outputs:
       kernel_version: ${{ steps.get_ver.outputs.version }}
