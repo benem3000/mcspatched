@@ -5,7 +5,7 @@ name: bazzite-AX210-test
 description: MCS patched bazzite.
 
 base-image: ghcr.io/ublue-os/bazzite
-image-version: ${{ env.IMAGE_VERSION }}
+image-version: "%IMAGE_VERSION%"
 
 modules:
   - type: files
