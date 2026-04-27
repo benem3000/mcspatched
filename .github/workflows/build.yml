@@ -73,7 +73,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        recipe: [recipes/recipe.yml]
+        recipe: [recipe.yml]
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v6
@@ -87,7 +87,7 @@ jobs:
       - name: Inject image version into recipe
         run: |
           version="${{ needs.prepare.outputs.fedora_version }}"
-          sed -i "s/%IMAGE_VERSION%/${version}/g" ${{ matrix.recipe }}
+          sed -i "s/%IMAGE_VERSION%/${version}/g" recipes/${{ matrix.recipe }}
 
       - name: Build Custom Image
         uses: blue-build/github-action@v1.11
