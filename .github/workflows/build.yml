@@ -73,7 +73,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        recipe: [recipe.yml]
+        recipe: [recipes/recipe.yml]
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v6
