@@ -1,11 +1,11 @@
 name: Generate Patched Bazzite Build
 on:
-  schedule:
-    - cron: "00 06 * * *"
-  push:
-    paths-ignore:
-      - "**.md"
-  pull_request:
+  #schedule:
+  #  - cron: "00 06 * * *"
+  #push:
+  #  paths-ignore:
+  #    - "**.md"
+  #pull_request:
   workflow_dispatch:
 
 concurrency:
@@ -81,7 +81,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        recipe: [recipes/recipe.yml]
+        recipe: [recipe.yml]
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v6
