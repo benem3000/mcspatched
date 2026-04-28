@@ -68,8 +68,6 @@ jobs:
     name: Build Custom Image
     needs: [prepare, compile]
     runs-on: ubuntu-latest
-    env:
-      IMAGE_VERSION: ${{ needs.prepare.outputs.fedora_version }}
     strategy:
       fail-fast: false
       matrix:
@@ -83,12 +81,6 @@ jobs:
         with:
           name: patched-kernel
           path: ./files/kernel-rpms
-
-      - name: Inject image version into recipe
-        run: |
-          sed -i 's/FEDORA_VERSION_PLACEHOLDER/${{ needs.prepare.outputs.fedora_version }}/g' recipes/${{ matrix.recipe }}
-          echo "Verifying replacement:"
-          cat recipes/${{ matrix.recipe }}
 
       - name: Build Custom Image
         uses: blue-build/github-action@v1.11
