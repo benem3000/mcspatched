@@ -1,8 +1,8 @@
 name: Generate Patched Bazzite Build
 on:
-  push:
-    paths:
-      - "version.txt"
+  # push:
+  #   paths:
+  #     - "version.txt"
   workflow_dispatch:
 
 concurrency:
@@ -15,58 +15,8 @@ permissions:
   id-token: write 
 
 jobs:
-  prepare:
-    runs-on: ubuntu-latest
-    outputs:
-      fedora_version: ${{ steps.set-version.outputs.version }}
-    steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v6
-
-      - name: Read version from file
-        id: set-version
-        run: echo "version=$(cat version.txt | tr -d '\n')" >> $GITHUB_OUTPUT
-
-  compile:
-    needs: prepare
-    runs-on: ubuntu-latest
-    container:
-      image: fedora:${{ needs.prepare.outputs.fedora_version }}
-      options: --privileged
-    steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v6
-
-      - name: Build Patched RPMs
-        run: |
-          dnf install -y fedpkg fedora-packager rpmdevtools ncurses-devel hmaccalc \
-                         binutils-devel elfutils-libelf-devel openssl-devel wget xz bison flex \
-                         pahole perl-devel perl-generators rust rust-src rustfmt bindgen clippy \
-                         gcc-c++ glibc-static hostname kernel-rpm-macros lvm2 \
-                         net-tools nss-tools openssl pesign python3-devel \
-                         systemd-boot-unsigned systemd-ukify tpm2-tools which dracut elfutils-devel \
-                         dosfstools e2fsprogs xfsprogs
-          rpmdev-setuptree
-          dnf download --source kernel
-          rpm -i kernel-*.src.rpm
-          cd ~/rpmbuild/SPECS
-          wget https://raw.githubusercontent.com/WoodyWoodster/mac80211-mcs-patch/main/skip-basic-mcs-check.patch -O ~/rpmbuild/SOURCES/skip-basic-mcs-check.patch
-          sed -i '/Patch0:/a Patch9999: skip-basic-mcs-check.patch' kernel.spec
-          sed -i 's/%define with_debug    1/%define with_debug    0/' kernel.spec
-          sed -i 's/%define with_debuginfo 1/%define with_debuginfo 0/' kernel.spec
-          rpmbuild -bb --target=x86_64 --with baseonly --without debuginfo --without debug kernel.spec
-          mkdir -p $GITHUB_WORKSPACE/output
-          cp ~/rpmbuild/RPMS/x86_64/*.rpm $GITHUB_WORKSPACE/output/
-
-      - name: Upload Kernel Artifacts
-        uses: actions/upload-artifact@v7
-        with:
-          name: patched-kernel
-          path: output/*.rpm
-
   bluebuild:
     name: Build Custom Image
-    needs: [prepare, compile]
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -75,12 +25,6 @@ jobs:
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v6
-
-      - name: Download Patched Kernel
-        uses: actions/download-artifact@v8
-        with:
-          name: patched-kernel
-          path: ./files/kernel-rpms
 
       - name: Build Custom Image
         uses: blue-build/github-action@v1.11

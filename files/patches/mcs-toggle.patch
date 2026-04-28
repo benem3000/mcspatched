@@ -1,0 +1,28 @@
+--- a/net/mac80211/main.c
++++ b/net/mac80211/main.c
+@@ -58,6 +58,11 @@
+ #define CREATE_TRACE_POINTS
+ #include "trace.h"
+ 
++bool skip_mcs_check = false;
++module_param(skip_mcs_check, bool, 0644);
++MODULE_PARM_DESC(skip_mcs_check, "Skip basic MCS set validation to fix connectivity with certain 4x4 APs (default: false)");
++
+ #ifdef CONFIG_MAC80211_MESH
+ #include "mesh.h"
+ #endif
+--- a/net/mac80211/mlme.c
++++ b/net/mac80211/mlme.c
+@@ -356,6 +356,12 @@
+ 	if (!ht_op)
+ 		return false;
+ 
++	/*
++	 * If the toggle is enabled, skip validation to allow 2x2 STAs
++	 * to connect to APs with high multi-stream basic rates.
++	 */
++	if (skip_mcs_check)
++		return true;
++
+ 	memcpy(&sta_ht_cap, &sband->ht_cap, sizeof(sta_ht_cap));
+ 	ieee80211_apply_htcap_overrides(sdata, &sta_ht_cap);

@@ -1,7 +1,7 @@
 name: Check Version Alignment
 on:
-  schedule:
-    - cron: "0 0 * * *" # Runs once a day at midnight UTC
+  #schedule:
+  #  - cron: "0 0 * * *" # Runs once a day at midnight UTC
   workflow_dispatch: 
 
 jobs:
@@ -39,28 +39,30 @@ jobs:
               "---" \
               "# yaml-language-server: \$schema=https://schema.blue-build.org/recipe-v1.json" \
               "name: mcspatched" \
-              "description: MCS patched bazzite." \
+              "description: Bazzite with toggleable mac80211 patch for Xfinity XB8 compatibility." \
               "" \
               "base-image: ghcr.io/ublue-os/bazzite" \
               "image-version: \"$NEW_FEDORA\"" \
               "" \
               "modules:" \
-              "  - type: files" \
-              "    files:" \
-              "      - source: system" \
-              "        destination: /" \
-              "      - source: kernel-rpms" \
-              "        destination: /tmp/kernel-rpms" \
+              "  - type: rpm-ostree" \
+              "    install:" \
+              "      - kernel-devel" \
+              "      - gcc" \
+              "      - make" \
+              "      - patch" \
+              "      - curl" \
+              "      - xz" \
               "" \
               "  - type: script" \
-              "    snippets:" \
-              "      - |" \
-              "        echo \"Swapping to Patched AX210 Kernel...\"" \
-              "        rpm-ostree override replace /tmp/kernel-rpms/*.rpm" \
+              "    scripts:" \
+              "      - build-mac80211.sh" \
               "" \
-              "        echo \"Cleaning up RPMs to save space...\"" \
-              "        rm -rf /tmp/kernel-rpms" \
-              "  - type: signing" \
+              "  - type: rpm-ostree" \
+              "    remove:" \
+              "      - kernel-devel" \
+              "      - gcc" \
+              "      - make" \
               > recipes/recipe.yml
 
             git config --global user.name "github-actions[bot]"
