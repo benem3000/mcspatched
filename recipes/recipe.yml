@@ -1,25 +1,27 @@
 ---
 # yaml-language-server: $schema=https://schema.blue-build.org/recipe-v1.json
-name: mcspatched
-description: MCS patched bazzite.
-
-base-image: ghcr.io/ublue-os/bazzite
-image-version: "43"
-
 modules:
-  - type: files
-    files:
-      - source: system
-        destination: /
-      - source: kernel-rpms
-        destination: /tmp/kernel-rpms
+  - type: rpm-ostree
+    install:
+      - kernel-devel  # Required for headers
+      - gcc
+      - make
+      - patch
+      - curl
+      - xz
 
   - type: script
-    snippets:
-      - |
-        echo "Swapping to Patched AX210 Kernel..."
-        rpm-ostree override replace /tmp/kernel-rpms/*.rpm
+    scripts:
+      - build-mac80211.sh
 
-        echo "Cleaning up RPMs to save space..."
-        rm -rf /tmp/kernel-rpms
-  - type: signing
+  # Optional: Copy the config to enable the toggle by default
+  - type: copy
+    src: files/mac80211.conf
+    dest: /etc/modprobe.d/mac80211.conf
+
+  # Cleanup: Remove build tools to keep the image small
+  - type: rpm-ostree
+    remove:
+      - kernel-devel
+      - gcc
+      - make
