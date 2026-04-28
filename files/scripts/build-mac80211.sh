@@ -1,6 +1,12 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# 1. Install build tools for this session only
+# We use --setopt=install_weak_deps=False to skip the broken Perl dependencies
+echo "Installing temporary build tools..."
+dnf install -y --nogpgcheck --setopt=install_weak_deps=False \
+    gcc make patch kernel-devel-$(uname -r)
+
 # 1. Grab the image's kernel version
 KVER=$(rpm -q kernel-core --queryformat '%{VERSION}-%{RELEASE}.%{ARCH}')
 KVER_BASE="${KVER%%-*}"
