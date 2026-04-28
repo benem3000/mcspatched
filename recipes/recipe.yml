@@ -8,12 +8,16 @@ image-version: 43
 modules:
   - type: rpm-ostree
     install:
-      - kernel-devel
       - gcc
       - make
       - patch
       - curl
       - xz
+      - kernel-devel
+    # Add this to help resolve the 'nothing provides' issues
+    args:
+      - --allowerasing
+      - --best
 
   - type: script
     scripts:
