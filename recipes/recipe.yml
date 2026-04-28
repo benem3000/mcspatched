@@ -1,5 +1,5 @@
 # yaml-language-server: $schema=https://schema.blue-build.org/recipe-v1.json
-name: my-patched-bazzite
+name: mcpatched-bazzite
 description: Bazzite with a toggleable mac80211 MCS validation patch for Xfinity XB8 compatibility.
 
 base-image: ghcr.io/ublue-os/bazzite
