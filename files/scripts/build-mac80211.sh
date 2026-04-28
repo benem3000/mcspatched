@@ -26,16 +26,16 @@ module_param(skip_mcs_check, bool, 0644);\
 MODULE_PARM_DESC(skip_mcs_check, "Skip basic MCS set validation to fix connectivity with certain 4x4 APs (default: false)");' net/mac80211/main.c
 
 # 2. Patch net/mac80211/mlme.c
-# FIRST: Declare the variable as extern so this file knows it exists elsewhere
-sed -i '15i \
-extern bool skip_mcs_check;' net/mac80211/mlme.c
 
-# SECOND: Insert the logic check after the ht_op validation
-sed -i '/if (!ht_op)/,/return false;/ { /return false;/a \
+# Add the extern declaration to the top (line 15)
+sed -i '15i extern bool skip_mcs_check;' net/mac80211/mlme.c
+
+# Insert the logic check specifically after the 'return false;' line 
+# that follows the ht_op check.
+sed -i '/if (!ht_op)/!b;n;a \
 \
 	if (skip_mcs_check)\
 		return true;' net/mac80211/mlme.c
-
 
 # 5. Compile against image headers
 make -C "/usr/lib/modules/$KVER/build" M="$WORK_DIR/net/mac80211" modules
