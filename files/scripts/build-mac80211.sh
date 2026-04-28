@@ -18,7 +18,7 @@ URL="https://cdn.kernel.org/pub/linux/kernel/v${MAJOR}.x/linux-$KVER_BASE.tar.xz
 curl -sL "$URL" | tar -xJ --strip-components=1 "linux-$KVER_BASE/net/mac80211" "linux-$KVER_BASE/include"
 
 # 1. Patch net/mac80211/main.c
-# We find the trace.h include and insert our parameter after it
+# We define the variable and the module parameter here
 sed -i '/#include "trace.h"/a \
 \
 bool skip_mcs_check = false;\
@@ -26,18 +26,16 @@ module_param(skip_mcs_check, bool, 0644);\
 MODULE_PARM_DESC(skip_mcs_check, "Skip basic MCS set validation to fix connectivity with certain 4x4 APs (default: false)");' net/mac80211/main.c
 
 # 2. Patch net/mac80211/mlme.c
-# We need to declare the variable as extern at the top of the file
-# AND insert the logic check later on.
+# FIRST: Declare the variable as extern so this file knows it exists elsewhere
+sed -i '15i \
+extern bool skip_mcs_check;' net/mac80211/mlme.c
 
-# Add the extern declaration near the top of the file
-sed -i '10i extern bool skip_mcs_check;' net/mac80211/mlme.c
-
-# Add the logic check after the ht_op check
+# SECOND: Insert the logic check after the ht_op validation
 sed -i '/if (!ht_op)/,/return false;/ { /return false;/a \
 \
 	if (skip_mcs_check)\
-		return true;
-}' net/mac80211/mlme.c
+		return true;' net/mac80211/mlme.c
+
 
 # 5. Compile against image headers
 make -C "/usr/lib/modules/$KVER/build" M="$WORK_DIR/net/mac80211" modules
