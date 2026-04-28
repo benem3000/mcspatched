@@ -1,11 +1,10 @@
 ---
 # yaml-language-server: $schema=https://schema.blue-build.org/recipe-v1.json
-# image will be published to ghcr.io/<user>/<name>
 name: bazzite-AX210-test
 description: MCS patched bazzite.
 
 base-image: ghcr.io/ublue-os/bazzite
-image-version: "FEDORA_VERSION_PLACEHOLDER"
+image-version: "43"
 
 modules:
   - type: files
@@ -15,14 +14,12 @@ modules:
       - source: kernel-rpms
         destination: /tmp/kernel-rpms
 
-
   - type: script
     snippets:
       - |
         echo "Swapping to Patched AX210 Kernel..."
         rpm-ostree override replace /tmp/kernel-rpms/*.rpm
-        
+
         echo "Cleaning up RPMs to save space..."
         rm -rf /tmp/kernel-rpms
-
   - type: signing
