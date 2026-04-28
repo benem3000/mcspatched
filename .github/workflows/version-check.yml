@@ -35,7 +35,7 @@ jobs:
             echo "Alignment detected! Updating to Fedora $NEW_FEDORA."
             echo "$NEW_FEDORA" > version.txt
 
-            # Generate recipes/recipe.yml
+            # Using the 'cat' heredoc method to write the multi-line recipe
             mkdir -p recipes
             cat <<EOF > recipes/recipe.yml
 ---
