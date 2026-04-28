@@ -3,7 +3,7 @@
 modules:
   - type: rpm-ostree
     install:
-      - kernel-devel  # Required for headers
+      - kernel-devel
       - gcc
       - make
       - patch
@@ -14,12 +14,6 @@ modules:
     scripts:
       - build-mac80211.sh
 
-  # Optional: Copy the config to enable the toggle by default
-  - type: copy
-    src: files/mac80211.conf
-    dest: /etc/modprobe.d/mac80211.conf
-
-  # Cleanup: Remove build tools to keep the image small
   - type: rpm-ostree
     remove:
       - kernel-devel
