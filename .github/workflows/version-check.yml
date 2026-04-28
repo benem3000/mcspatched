@@ -38,7 +38,7 @@ jobs:
             printf "%s\n" \
               "---" \
               "# yaml-language-server: \$schema=https://schema.blue-build.org/recipe-v1.json" \
-              "name: bazzite-AX210-test" \
+              "name: mcspatched" \
               "description: MCS patched bazzite." \
               "" \
               "base-image: ghcr.io/ublue-os/bazzite" \
