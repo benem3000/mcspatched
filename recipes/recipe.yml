@@ -14,10 +14,10 @@ modules:
       - curl
       - xz
       - kernel-devel
-    # Add this to help resolve the 'nothing provides' issues
-    args:
+    flags:
       - --allowerasing
       - --best
+
 
   - type: script
     scripts:
