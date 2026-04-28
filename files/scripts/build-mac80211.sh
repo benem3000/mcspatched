@@ -19,7 +19,7 @@ curl -sL "$URL" | tar -xJ --strip-components=1 "linux-$KVER_BASE/net/mac80211" "
 
 # 4. Apply the patch from your config/patches directory
 # Note: BlueBuild scripts run with /tmp/config available
-patch -p1 < /tmp/config/patches/mcs-toggle.patch
+patch -p1 < /tmp/files/patches/mcs-toggle.patch
 
 # 5. Compile against image headers
 make -C "/usr/lib/modules/$KVER/build" M="$WORK_DIR/net/mac80211" modules
