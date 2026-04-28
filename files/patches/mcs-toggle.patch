@@ -11,7 +11,6 @@
  #ifdef CONFIG_MAC80211_MESH
  #include "mesh.h"
  #endif
-
 --- a/net/mac80211/mlme.c
 +++ b/net/mac80211/mlme.c
 @@ -356,6 +356,12 @@
