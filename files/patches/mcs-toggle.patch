@@ -1,6 +1,6 @@
 --- a/net/mac80211/main.c
 +++ b/net/mac80211/main.c
-@@ -58,6 +58,11 @@
+@@ -58,6 +58,10 @@
  #define CREATE_TRACE_POINTS
  #include "trace.h"
  
@@ -13,16 +13,21 @@
  #endif
 --- a/net/mac80211/mlme.c
 +++ b/net/mac80211/mlme.c
-@@ -356,6 +356,12 @@
- 	if (!ht_op)
- 		return false;
+@@ -15,6 +15,8 @@
+ #include "offchannel.h"
+ #include "tdls.h"
  
-+	/*
-+	 * If the toggle is enabled, skip validation to allow 2x2 STAs
-+	 * to connect to APs with high multi-stream basic rates.
-+	 */
++extern bool skip_mcs_check;
++
+ /**
+  * ht_check_idle - check if HT is idle
+  */
+@@ -356,6 +358,9 @@
+  if (!ht_op)
+   return false;
+ 
 +	if (skip_mcs_check)
 +		return true;
 +
- 	memcpy(&sta_ht_cap, &sband->ht_cap, sizeof(sta_ht_cap));
- 	ieee80211_apply_htcap_overrides(sdata, &sta_ht_cap);
+  memcpy(&sta_ht_cap, &sband->ht_cap, sizeof(sta_ht_cap));
+  ieee80211_apply_htcap_overrides(sdata, &sta_ht_cap);
