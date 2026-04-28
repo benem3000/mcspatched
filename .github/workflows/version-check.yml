@@ -35,36 +35,33 @@ jobs:
             echo "Alignment detected! Updating to Fedora $NEW_FEDORA."
             echo "$NEW_FEDORA" > version.txt
 
-            # Using the 'cat' heredoc method to write the multi-line recipe
-            mkdir -p recipes
-            cat <<EOF > recipes/recipe.yml
-  ---
-  # yaml-language-server: \$schema=https://schema.blue-build.org/recipe-v1.json
-  # image will be published to ghcr.io/<user>/<name>
-  name: bazzite-AX210-test
-  description: MCS patched bazzite.
-  
-  base-image: ghcr.io/ublue-os/bazzite
-  image-version: "$NEW_FEDORA"
-  
-  modules:
-    - type: files
-      files:
-        - source: system
-          destination: /
-        - source: kernel-rpms
-          destination: /tmp/kernel-rpms
-  
-    - type: script
-      snippets:
-        - |
-          echo "Swapping to Patched AX210 Kernel..."
-          rpm-ostree override replace /tmp/kernel-rpms/*.rpm
-          
-          echo "Cleaning up RPMs to save space..."
-          rm -rf /tmp/kernel-rpms
-    - type: signing
-EOF
+            printf "%s\n" \
+              "---" \
+              "# yaml-language-server: \$schema=https://schema.blue-build.org/recipe-v1.json" \
+              "name: bazzite-AX210-test" \
+              "description: MCS patched bazzite." \
+              "" \
+              "base-image: ghcr.io/ublue-os/bazzite" \
+              "image-version: \"$NEW_FEDORA\"" \
+              "" \
+              "modules:" \
+              "  - type: files" \
+              "    files:" \
+              "      - source: system" \
+              "        destination: /" \
+              "      - source: kernel-rpms" \
+              "        destination: /tmp/kernel-rpms" \
+              "" \
+              "  - type: script" \
+              "    snippets:" \
+              "      - |" \
+              "        echo \"Swapping to Patched AX210 Kernel...\"" \
+              "        rpm-ostree override replace /tmp/kernel-rpms/*.rpm" \
+              "" \
+              "        echo \"Cleaning up RPMs to save space...\"" \
+              "        rm -rf /tmp/kernel-rpms" \
+              "  - type: signing" \
+              > recipes/recipe.yml
 
             git config --global user.name "github-actions[bot]"
             git config --global user.email "github-actions[bot]@users.noreply.github.com"
