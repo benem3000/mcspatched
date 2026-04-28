@@ -8,16 +8,8 @@ image-version: 43
 modules:
   - type: rpm-ostree
     install:
-      - gcc
-      - make
-      - patch
       - curl
       - xz
-      - kernel-devel
-    flags:
-      - --allowerasing
-      - --best
-
 
   - type: script
     scripts:
