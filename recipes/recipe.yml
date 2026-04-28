@@ -13,10 +13,4 @@ modules:
 
   - type: script
     scripts:
-      - build-mac80211.sh
-
-  - type: rpm-ostree
-    remove:
-      - kernel-devel
-      - gcc
-      - make
+      - build-mac80211.s
