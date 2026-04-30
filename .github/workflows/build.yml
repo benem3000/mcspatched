@@ -26,6 +26,30 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v6
 
+      - name: Compile Kernel Module RPM
+        env:
+          MOK_PRIV: ${{ secrets.MOK_PRIVATE_KEY }}
+          MOK_X509: ${{ secrets.MOK_PUBLIC_KEY }}
+        run: |
+          echo "$MOK_PRIV" > signing_key.priv
+          echo "$MOK_X509" > signing_key.x509
+          
+          mkdir -p rpms rpmbuild
+          
+          podman run --rm -v ${{ github.workspace }}:/work -w /work ghcr.io/ublue-os/bazzite:latest bash -c "
+            KVER=\$(rpm -q kernel-core --queryformat '%{VERSION}-%{RELEASE}.%{ARCH}' | head -n 1)
+            dnf install -y --nogpgcheck rpm-build make gcc kernel-devel-\$KVER curl xz openssl
+            
+            rpmbuild -bb spec_files/mcspatched_mac80211/mcspatched_mac80211.spec \
+              --define '_topdir /work/rpmbuild' \
+              --define '_rpmdir /work/rpms' \
+              --define 'mok_priv /work/signing_key.priv' \
+              --define 'mok_x509 /work/signing_key.x509'
+          "
+          
+          find rpms/ -name '*.rpm' -exec mv {} rpms/ \;
+          rm signing_key.priv signing_key.x509
+
       - name: Build Custom Image
         uses: blue-build/github-action@v1.11
         with:
