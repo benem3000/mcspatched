@@ -1,21 +1,11 @@
 # yaml-language-server: $schema=https://schema.blue-build.org/recipe-v1.json
 name: mcspatched-bazzite
-description: Akmod with a toggleable mac80211 MCS validation patch for certain ISP router compatibility (i.e. Xfinity, Rogers XB routers).
+description: Bazzite with a toggleable mac80211 MCS validation patch for certain ISP router compatibility.
 
 base-image: ghcr.io/ublue-os/bazzite
 image-version: 43
 
 modules:
-  - type: akmods
-    name: mac80211-patched
-    base-packages:
-      - kernel-devel
-    build-packages:
-      - gcc
-      - make
-      - patch
-    # This points to the patch we created in Step 1
-    patches:
-      - mac80211-skip-mcs.patch
-    # We tell it which folder in the kernel source to build
-    source-dir: net/mac80211
+  - type: rpm-ostree
+    install:
+      - mac80211-kmod
