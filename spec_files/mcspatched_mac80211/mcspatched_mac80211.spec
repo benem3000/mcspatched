@@ -21,7 +21,20 @@ curl -sLO "$SUMS_URL"
 export GNUPGHOME=$(mktemp -d)
 
 gpg2 --locate-keys torvalds@kernel.org gregkh@kernel.org
-gpg2 --verify sha256sums.asc
+
+if ! gpg2 --verify sha256sums.asc 2> gpg_error.log; then
+    MISSING_KEY=$(grep "No public key" gpg_error.log | awk '{print $NF}')
+    
+    if [ -n "$MISSING_KEY" ]; then
+        echo "Missing key detected. Fetching key ID: $MISSING_KEY"
+        gpg2 --keyserver hkps://keyserver.ubuntu.com --recv-keys "$MISSING_KEY"
+        gpg2 --verify sha256sums.asc
+    else
+        echo "GPG verification failed! Output:"
+        cat gpg_error.log
+        exit 1
+    fi
+fi
 
 grep "linux-${KVER_BASE}.tar.xz" sha256sums.asc | sha256sum -c -
 
