@@ -39,7 +39,7 @@ jobs:
           podman build \
             --build-arg BAZZITE_VERSION=latest \
             --build-arg BUILD_TAG=$TAG \
-            --secret id=mok_priv,env=signing_key.priv \
+            --secret id=mok_priv,env=MOK_PRIVATE_KEY \
             -f Containerfile.in \
             -t $REPO:latest \
             -t $REPO:$TAG .
@@ -79,6 +79,9 @@ jobs:
 
       - name: Prepare Public Key
         run: echo "${{ secrets.MOK_PUBLIC_KEY }}" > signing_key.x509
+
+      - name: Log in to GHCR
+        run: echo "${{ github.token }}" | podman login ghcr.io -u ${{ github.actor }} --password-stdin
 
       - name: Extract RPM from Carrier
         run: |
