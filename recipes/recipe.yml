@@ -1,9 +1,9 @@
 # yaml-language-server: $schema=https://schema.blue-build.org/recipe-v1.json
 name: mcspatched-bazzite
-description: Bazzite with a toggleable mac80211 MCS validation patch for certain ISP router compatibility.
+description: Toggleable kmod for Bazzite.
 
 base-image: ghcr.io/ublue-os/bazzite
-image-version: 43
+image-version: latest
 
 modules:
   - type: copy
