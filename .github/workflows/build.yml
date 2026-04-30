@@ -37,6 +37,7 @@ jobs:
           
           podman build \
             --build-arg BAZZITE_VERSION=latest \
+            --secret id=mok_priv,src=signing_key.priv \
             -f Containerfile.in \
             -t $REPO:latest \
             -t $REPO:$TAG .
@@ -83,7 +84,6 @@ jobs:
           REPO=ghcr.io/${{ github.repository_owner }}/mac80211-carrier
           
           podman pull $REPO:$TAG
-          # Add 'true' at the end as a dummy command to satisfy podman
           podman create --name temp_carrier $REPO:$TAG true
           podman cp temp_carrier:/rpms/mac80211-kmod.rpm .
           podman rm temp_carrier
