@@ -26,7 +26,7 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: .
-          file: ./Containerfile
+          file: ./Containerfile.in
           push: true
           tags: ghcr.io/${{ github.repository_owner }}/mac80211-carrier:latest
           build-args: |
