@@ -49,11 +49,8 @@ jobs:
           
           find rpms/ -name '*.rpm' -exec mv {} rpms/ \;
           
-          # IMPORTANT CHANGE: We delete the private key for security, 
-          # but we KEEP the public .x509 key so we can upload it for users!
           rm signing_key.priv 
 
-      # NEW STEP: Save the RPM and Public Key temporarily
       - name: Upload Kmod Artifacts
         uses: actions/upload-artifact@v4
         with:
@@ -70,7 +67,6 @@ jobs:
           registry_token: ${{ github.token }}
           maximize_build_space: true
 
-  # NEW JOB: Automatically create a GitHub Release with the files attached
   release:
     name: Create GitHub Release
     needs: bluebuild
