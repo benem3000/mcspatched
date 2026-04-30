@@ -20,7 +20,7 @@ curl -sLO "$SUMS_URL"
 
 export GNUPGHOME=$(mktemp -d)
 
-gpg2 --locate-keys torvalds@kernel.org gregkh@kernel.org
+gpg2 --locate-keys torvalds@kernel.org gregkh@kernel.org sashal@kernel.org benh@kernel.org
 
 if ! gpg2 --verify sha256sums.asc 2> gpg_error.log; then
     MISSING_KEY=$(grep "No public key" gpg_error.log | awk '{print $NF}')
