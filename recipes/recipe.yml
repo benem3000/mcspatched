@@ -8,4 +8,4 @@ image-version: 43
 modules:
   - type: rpm-ostree
     install:
-      - /rpms/mac80211-kmod.rpm
+      - mac80211-kmod.rpm
