@@ -53,3 +53,23 @@ jobs:
           cosign_private_key: ${{ secrets.SIGNING_SECRET }}
           registry_token: ${{ github.token }}
           maximize_build_space: true
+  create-release:
+      name: Create GitHub Release
+      needs: build-carrier
+      runs-on: ubuntu-latest
+      permissions:
+        contents: write
+      steps:
+        - name: Checkout
+          uses: actions/checkout@v6
+  
+        - name: Extract RPM from Carrier
+          run: |
+            podman pull ghcr.io/${{ github.repository_owner }}/mac80211-carrier:latest
+            podman run --rm -v .:/out ghcr.io/${{ github.repository_owner }}/mac80211-carrier:latest cp /rpms/mac80211-kmod.rpm /out/
+  
+        - name: Release
+          uses: softprops/action-gh-release@v2
+          with:
+            tag_name: latest-build
+            files: mac80211-kmod.rpm
