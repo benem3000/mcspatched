@@ -74,7 +74,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
 
-      # Fix: Regenerate the public key so it can be uploaded as an asset
       - name: Prepare Public Key
         run: echo "${{ secrets.MOK_PUBLIC_KEY }}" > signing_key.x509
 
@@ -84,7 +83,8 @@ jobs:
           REPO=ghcr.io/${{ github.repository_owner }}/mac80211-carrier
           
           podman pull $REPO:$TAG
-          podman create --name temp_carrier $REPO:$TAG
+          # Add 'true' at the end as a dummy command to satisfy podman
+          podman create --name temp_carrier $REPO:$TAG true
           podman cp temp_carrier:/rpms/mac80211-kmod.rpm .
           podman rm temp_carrier
 
