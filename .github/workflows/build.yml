@@ -3,6 +3,7 @@ on:
   push:
     paths:
       - "version.txt"
+      - "kernel.txt"
   workflow_dispatch:
 
 concurrency:
