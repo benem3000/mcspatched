@@ -53,7 +53,7 @@ jobs:
               --define \"kversion \$KVER\"
           "
           
-          find rpms/ -name '*.rpm' -exec mv {} rpms/ \;
+          find rpms/ -name '*.rpm' -exec mv {} rpms/mac80211-kmod.rpm \;
           
           rm signing_key.priv
 
