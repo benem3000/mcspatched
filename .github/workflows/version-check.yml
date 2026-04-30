@@ -50,7 +50,7 @@ jobs:
               "modules:" \
               "  - type: rpm-ostree" \
               "    install:" \
-              "      - /rpms/mac80211-kmod.rpm" \
+              "      - mac80211-kmod.rpm" \
               > recipes/recipe.yml
 
             git config --global user.name "github-actions[bot]"
