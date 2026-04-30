@@ -1,6 +1,6 @@
 # yaml-language-server: $schema=https://schema.blue-build.org/recipe-v1.json
 name: mcspatched-bazzite
-description: Toggleable kmod for Bazzite.
+description: Kmod for Bazzite mac80211 MCS patch.
 
 base-image: ghcr.io/ublue-os/bazzite
 image-version: latest
