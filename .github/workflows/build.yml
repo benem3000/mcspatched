@@ -2,7 +2,7 @@ name: Generate Kmod
 on:
   push:
     branches:
-      - akmod # Change this to your primary branch name if different
+      - akmod
   workflow_dispatch:
 
 jobs:
