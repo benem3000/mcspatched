@@ -19,7 +19,7 @@ TARGET="net/mac80211/mlme.c"
 
 sed -i '/#include <net\/mac80211.h>/a \
 \
-static bool skip_mcs_check = true;\
+static bool skip_mcs_check = false;\
 module_param(skip_mcs_check, bool, 0644);\
 MODULE_PARM_DESC(skip_mcs_check, "Bypass MCS verification for 4x4 router compatibility");' "$TARGET"
 
