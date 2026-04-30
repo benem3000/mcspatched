@@ -1,8 +1,6 @@
-# Stage 1: Build the RPM
 ARG BAZZITE_VERSION=latest
-FROM ghcr.io/ublue-os/bazzite:${BAZZITE_VERSION} AS builder
+FROM ghcr.io/ublue-os/bazzite:${BAZZITE_VERSION}
 
-# Ensure ARG is available in this stage
 ARG BAZZITE_VERSION
 
 COPY spec_files /tmp/spec_files
@@ -18,8 +16,5 @@ RUN KVER=$(rpm -q kernel-core --queryformat '%{VERSION}-%{RELEASE}.%{ARCH}' | he
       --define 'mok_priv /tmp/signing_key.priv' \
       --define 'mok_x509 /tmp/signing_key.x509' \
       --define "kversion $KVER" && \
-    find /rpms -name '*.rpm' -exec mv {} /rpms/mac80211-kmod.rpm \;
-
-# Stage 2: Final Carrier Image
-FROM scratch
-COPY --from=builder /rpms/mac80211-kmod.rpm /rpms/mac80211-kmod.rpm
+    find /rpms -name '*.rpm' -exec mv {} /rpms/mac80211-kmod.rpm \; && \
+    rm /tmp/signing_key.priv
