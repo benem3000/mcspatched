@@ -1,7 +1,7 @@
 name: Check Version Alignment
 on:
   schedule:
-    - cron: "0 0 * * *" # Runs once a day at midnight UTC
+    - cron: "0 0,12 * * *" # Runs every 12 hours
   workflow_dispatch: 
 
 jobs:
@@ -15,7 +15,6 @@ jobs:
         id: check
         run: |
           podman pull ghcr.io/ublue-os/bazzite:latest
-          
           KVER=$(podman run --rm ghcr.io/ublue-os/bazzite:latest rpm -q kernel-core --queryformat '%{VERSION}-%{RELEASE}.%{ARCH}' | head -n 1)
           FEDORA_VER=$(podman run --rm ghcr.io/ublue-os/bazzite:latest bash -c 'source /etc/os-release && echo $VERSION_ID')
           
@@ -38,19 +37,24 @@ jobs:
             echo "$NEW_MAJOR" > version.txt
             echo "$NEW_KERNEL" > kernel.txt
 
+            # Write the NEW recipe format for the Carrier Image workflow
             printf "%s\n" \
-              "---" \
               "# yaml-language-server: \$schema=https://schema.blue-build.org/recipe-v1.json" \
               "name: mcspatched-bazzite" \
-              "description: Bazzite with a toggleable mac80211 MCS validation patch for certain ISP router compatibility." \
+              "description: Bazzite with a toggleable mac80211 MCS validation patch." \
               "" \
               "base-image: ghcr.io/ublue-os/bazzite" \
-              "image-version: \"$NEW_MAJOR\"" \
+              "image-version: $NEW_MAJOR" \
               "" \
               "modules:" \
+              "  - type: copy" \
+              "    from: ghcr.io/${{ github.repository_owner }}/mac80211-carrier:latest" \
+              "    src: /rpms/mac80211-kmod.rpm" \
+              "    dest: /tmp/mac80211-kmod.rpm" \
+              "" \
               "  - type: rpm-ostree" \
               "    install:" \
-              "      - mac80211-kmod.rpm" \
+              "      - /tmp/mac80211-kmod.rpm" \
               > recipes/recipe.yml
 
             git config --global user.name "github-actions[bot]"
@@ -61,5 +65,5 @@ jobs:
 
             gh workflow run build.yml
           else
-            echo "No kernel or OS update required at this time."
+            echo "No update required."
           fi
