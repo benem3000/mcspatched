@@ -20,7 +20,7 @@ curl -sLO "$SUMS_URL"
 
 export GNUPGHOME=$(mktemp -d)
 
-gpg2 --locate-keys torvalds@kernel.org gregkh@kernel.org sashal@kernel.org bwh@kernel.org
+gpg2 --locate-keys torvalds@kernel.org gregkh@kernel.org sashal@kernel.org bwh@kernel.org autosigner@kernel.org
 
 if ! gpg2 --verify sha256sums.asc; then
     echo "CRITICAL: Signature verification failed!"
