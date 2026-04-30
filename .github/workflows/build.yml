@@ -47,8 +47,6 @@ jobs:
             rpmbuild -bb spec_files/mcspatched_mac80211/mcspatched_mac80211.spec \
               --define '_topdir /work/rpmbuild' \
               --define '_rpmdir /work/files/rpm-ostree' \
-              --define '_topdir /work/rpmbuild' \
-              --define '_rpmdir /work/files/rpms' \
               --define 'mok_priv /work/signing_key.priv' \
               --define 'mok_x509 /work/signing_key.x509' \
               --define \"kversion \$KVER\"
