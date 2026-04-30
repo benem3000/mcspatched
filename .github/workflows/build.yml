@@ -37,6 +37,7 @@ jobs:
           
           podman build \
             --build-arg BAZZITE_VERSION=latest \
+            --build-arg BUILD_TAG=$TAG \
             --secret id=mok_priv,src=signing_key.priv \
             -f Containerfile.in \
             -t $REPO:latest \
