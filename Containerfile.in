@@ -3,9 +3,9 @@ ARG BAZZITE_VERSION=latest
 FROM ghcr.io/ublue-os/bazzite:${BAZZITE_VERSION} AS builder
 
 ARG BAZZITE_VERSION
+ARG BUILD_TAG
 
 COPY spec_files /tmp/spec_files
-COPY signing_key.priv /tmp/signing_key.priv
 COPY signing_key.x509 /tmp/signing_key.x509
 
 RUN --mount=type=secret,id=mok_priv \
