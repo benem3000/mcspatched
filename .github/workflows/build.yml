@@ -1,9 +1,8 @@
 name: Generate Kmod
 on:
   push:
-    paths:
-      - "version.txt"
-      - "kernel.txt"
+    branches:
+      - akmod # Change this to your primary branch name if different
   workflow_dispatch:
 
 jobs:
@@ -30,7 +29,7 @@ jobs:
           push: true
           tags: ghcr.io/${{ github.repository_owner }}/mac80211-carrier:latest
           build-args: |
-            BAZZITE_VERSION=$(cat version.txt | tr -d '\n')
+            BAZZITE_VERSION=latest
 
   bluebuild:
     name: Build Custom Image
