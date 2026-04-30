@@ -11,29 +11,32 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v6
 
-      - name: Get Latest Fedora Version
-        id: fedora
+      - name: Get OS and Kernel Versions
+        id: check
         run: |
-          FEDORA_VER=$(curl -s https://fedoraproject.org/releases.json | jq -r '[.[] | .version | select(test("^[0-9]+$"))] | map(tonumber) | max')
-          echo "latest_fedora=$FEDORA_VER" >> $GITHUB_OUTPUT
-
-      - name: Get Latest Bazzite Base Version
-        id: bazzite
-        run: |
-          BAZZITE_VER=$(skopeo inspect docker://ghcr.io/ublue-os/bazzite:latest | jq -r '.Labels["org.opencontainers.image.version"]' | cut -d. -f1)
-          echo "latest_bazzite=$BAZZITE_VER" >> $GITHUB_OUTPUT
+          podman pull ghcr.io/ublue-os/bazzite:latest
+          
+          KVER=$(podman run --rm ghcr.io/ublue-os/bazzite:latest rpm -q kernel-core --queryformat '%{VERSION}-%{RELEASE}.%{ARCH}' | head -n 1)
+          FEDORA_VER=$(podman run --rm ghcr.io/ublue-os/bazzite:latest bash -c 'source /etc/os-release && echo $VERSION_ID')
+          
+          echo "kver=$KVER" >> $GITHUB_OUTPUT
+          echo "fedora_ver=$FEDORA_VER" >> $GITHUB_OUTPUT
 
       - name: Compare and Notify
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          CURRENT_V_FILE=$(cat version.txt | tr -d '\n')
-          NEW_FEDORA=${{ steps.fedora.outputs.latest_fedora }}
-          NEW_BAZZITE=${{ steps.bazzite.outputs.latest_bazzite }}
+          CURRENT_MAJOR=$(cat version.txt 2>/dev/null | tr -d '\n' || echo "0")
+          CURRENT_KERNEL=$(cat kernel.txt 2>/dev/null | tr -d '\n' || echo "0")
+          
+          NEW_MAJOR=${{ steps.check.outputs.fedora_ver }}
+          NEW_KERNEL=${{ steps.check.outputs.kver }}
 
-          if [ "$NEW_FEDORA" == "$NEW_BAZZITE" ] && [ "$NEW_FEDORA" != "$CURRENT_V_FILE" ]; then
-            echo "Alignment detected! Updating to Fedora $NEW_FEDORA."
-            echo "$NEW_FEDORA" > version.txt
+          if [ "$NEW_KERNEL" != "$CURRENT_KERNEL" ] || [ "$NEW_MAJOR" != "$CURRENT_MAJOR" ]; then
+            echo "Update detected! Kernel: $NEW_KERNEL, Fedora: $NEW_MAJOR"
+            
+            echo "$NEW_MAJOR" > version.txt
+            echo "$NEW_KERNEL" > kernel.txt
 
             printf "%s\n" \
               "---" \
@@ -42,7 +45,7 @@ jobs:
               "description: Bazzite with a toggleable mac80211 MCS validation patch for certain ISP router compatibility." \
               "" \
               "base-image: ghcr.io/ublue-os/bazzite" \
-              "image-version: \"$NEW_FEDORA\"" \
+              "image-version: \"$NEW_MAJOR\"" \
               "" \
               "modules:" \
               "  - type: rpm-ostree" \
@@ -52,12 +55,11 @@ jobs:
 
             git config --global user.name "github-actions[bot]"
             git config --global user.email "github-actions[bot]@users.noreply.github.com"
-            git add version.txt recipes/recipe.yml
-            git commit -m "chore: update version to $NEW_FEDORA"
+            git add version.txt kernel.txt recipes/recipe.yml
+            git commit -m "chore: update build for kernel $NEW_KERNEL"
             git push
 
-            echo "Manually triggering the main build..."
             gh workflow run build.yml
           else
-            echo "No update required at this time."
+            echo "No kernel or OS update required at this time."
           fi
