@@ -18,6 +18,8 @@ SUMS_URL="https://cdn.kernel.org/pub/linux/kernel/v${MAJOR}.x/sha256sums.asc"
 curl -sLO "$URL"
 curl -sLO "$SUMS_URL"
 
+export GNUPGHOME=$(mktemp -d)
+
 gpg2 --locate-keys torvalds@kernel.org gregkh@kernel.org
 gpg2 --verify sha256sums.asc
 
