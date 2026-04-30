@@ -22,21 +22,24 @@ jobs:
         id: generate_tag
         run: echo "tag=$(date +%Y%m%d-%H%M)" >> $GITHUB_OUTPUT
 
-      - name: Prepare Keys
+      - name: Prepare Public Key
         run: |
-          echo "${{ secrets.MOK_PRIVATE_KEY }}" > signing_key.priv
           echo "${{ secrets.MOK_PUBLIC_KEY }}" > signing_key.x509
 
       - name: Log in to GHCR
         run: echo "${{ github.token }}" | podman login ghcr.io -u ${{ github.actor }} --password-stdin
 
       - name: Build and Push Carrier (Podman)
+        env:
+          MOK_PRIVATE_KEY: ${{ secrets.MOK_PRIVATE_KEY }}
         run: |
           TAG=${{ steps.generate_tag.outputs.tag }}
           REPO=ghcr.io/${{ github.repository_owner }}/mac80211-carrier
           
           podman build \
             --build-arg BAZZITE_VERSION=latest \
+            --build-arg BUILD_TAG=$TAG \
+            --secret id=mok_priv,env=MOK_PRIVATE_KEY \
             -f Containerfile.in \
             -t $REPO:latest \
             -t $REPO:$TAG .
@@ -77,13 +80,15 @@ jobs:
       - name: Prepare Public Key
         run: echo "${{ secrets.MOK_PUBLIC_KEY }}" > signing_key.x509
 
+      - name: Log in to GHCR
+        run: echo "${{ github.token }}" | podman login ghcr.io -u ${{ github.actor }} --password-stdin
+
       - name: Extract RPM from Carrier
         run: |
           TAG=${{ needs.build-carrier.outputs.tag }}
           REPO=ghcr.io/${{ github.repository_owner }}/mac80211-carrier
           
           podman pull $REPO:$TAG
-          # Add 'true' at the end as a dummy command to satisfy podman
           podman create --name temp_carrier $REPO:$TAG true
           podman cp temp_carrier:/rpms/mac80211-kmod.rpm .
           podman rm temp_carrier

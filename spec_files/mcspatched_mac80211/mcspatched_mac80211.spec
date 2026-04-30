@@ -1,6 +1,6 @@
 Name:           mac80211-kmod
-Version:        1.0
-Release:        1%{?dist}
+Version:        2.0
+Release:        %{?build_tag}%{!?build_tag:1}%{?dist}
 Summary:        Patched mac80211 kernel module for 4x4 AP compatibility
 License:        GPLv2
 BuildRequires:  make, gcc, kernel-devel, curl, xz
@@ -13,7 +13,24 @@ KVER_BASE=$(echo %{kversion} | cut -d'-' -f1)
 MAJOR=$(echo ${KVER_BASE} | cut -d'.' -f1)
 
 URL="https://cdn.kernel.org/pub/linux/kernel/v${MAJOR}.x/linux-${KVER_BASE}.tar.xz"
-curl -sL "$URL" | tar -xJ --strip-components=1 "linux-${KVER_BASE}/net/mac80211" "linux-${KVER_BASE}/include"
+SUMS_URL="https://cdn.kernel.org/pub/linux/kernel/v${MAJOR}.x/sha256sums.asc"
+
+curl -sLO "$URL"
+curl -sLO "$SUMS_URL"
+
+export GNUPGHOME=$(mktemp -d)
+
+gpg2 --locate-keys torvalds@kernel.org gregkh@kernel.org sashal@kernel.org bwh@kernel.org autosigner@kernel.org
+
+if ! gpg2 --verify sha256sums.asc; then
+    echo "CRITICAL: Signature verification failed!"
+    echo "The kernel was signed by an unknown key or the signature is invalid."
+    exit 1
+fi
+
+grep "linux-${KVER_BASE}.tar.xz" sha256sums.asc | sha256sum -c -
+
+tar -xJf "linux-${KVER_BASE}.tar.xz" --strip-components=1 "linux-${KVER_BASE}/net/mac80211" "linux-${KVER_BASE}/include"
 
 TARGET="net/mac80211/mlme.c"
 
