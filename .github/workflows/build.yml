@@ -36,20 +36,26 @@ jobs:
           
           mkdir -p rpms rpmbuild
           
-          podman run --rm -v ${{ github.workspace }}:/work -w /work ghcr.io/ublue-os/bazzite:latest bash -c "
+          # Read the target version from version.txt
+          BAZZITE_VER=$(cat version.txt | tr -d '\n')
+          
+          # Use the specific Bazzite version for the container
+          podman run --rm -v ${{ github.workspace }}:/work -w /work ghcr.io/ublue-os/bazzite:${BAZZITE_VER} bash -c "
             KVER=\$(rpm -q kernel-core --queryformat '%{VERSION}-%{RELEASE}.%{ARCH}' | head -n 1)
             dnf install -y --nogpgcheck rpm-build make gcc kernel-devel-\$KVER curl xz openssl
             
+            # Pass the KVER variable into the spec file
             rpmbuild -bb spec_files/mcspatched_mac80211/mcspatched_mac80211.spec \
               --define '_topdir /work/rpmbuild' \
               --define '_rpmdir /work/rpms' \
               --define 'mok_priv /work/signing_key.priv' \
-              --define 'mok_x509 /work/signing_key.x509'
+              --define 'mok_x509 /work/signing_key.x509' \
+              --define \"kversion \$KVER\"
           "
           
           find rpms/ -name '*.rpm' -exec mv {} rpms/ \;
           
-          rm signing_key.priv 
+          rm signing_key.priv
 
       - name: Upload Kmod Artifacts
         uses: actions/upload-artifact@v4
