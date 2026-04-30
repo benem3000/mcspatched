@@ -6,99 +6,48 @@ on:
       - "kernel.txt"
   workflow_dispatch:
 
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref || github.run_id }}
-  cancel-in-progress: true
-
-permissions:
-  contents: write
-  packages: write
-  id-token: write 
-
 jobs:
-  bluebuild:
-    name: Build Custom Image
+  build-carrier:
+    name: Build Carrier Image
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        recipe: [recipe.yml]
+    permissions:
+      contents: read
+      packages: write
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v6
 
-      - name: Compile Kernel Module RPM
-        env:
-          MOK_PRIV: ${{ secrets.MOK_PRIVATE_KEY }}
-          MOK_X509: ${{ secrets.MOK_PUBLIC_KEY }}
+      - name: Prepare Keys
         run: |
-          echo "$MOK_PRIV" > signing_key.priv
-          echo "$MOK_X509" > signing_key.x509
-          
-          # 1. Output to files/rpms so BlueBuild automatically copies it
-          mkdir -p files/rpm-ostree rpmbuild
-          
-          BAZZITE_VER=$(cat version.txt | tr -d '\n')
-          
-          podman run --rm -v ${{ github.workspace }}:/work -w /work ghcr.io/ublue-os/bazzite:${BAZZITE_VER} bash -c "
-            KVER=\$(rpm -q kernel-core --queryformat '%{VERSION}-%{RELEASE}.%{ARCH}' | head -n 1)
-            dnf install -y --nogpgcheck rpm-build make gcc kernel-devel-\$KVER curl xz openssl
-            
-            rpmbuild -bb spec_files/mcspatched_mac80211/mcspatched_mac80211.spec \
-              --define '_topdir /work/rpmbuild' \
-              --define '_rpmdir /work/files/rpm-ostree' \
-              --define 'mok_priv /work/signing_key.priv' \
-              --define 'mok_x509 /work/signing_key.x509' \
-              --define \"kversion \$KVER\"
-          "
-          
-          find files/rpm-ostree/ -name '*.rpm' -exec mv {} files/rpm-ostree/mac80211-kmod.rpm \;
-          
-          rm signing_key.priv
+          echo "${{ secrets.MOK_PRIVATE_KEY }}" > signing_key.priv
+          echo "${{ secrets.MOK_PUBLIC_KEY }}" > signing_key.x509
 
-      - name: Upload Kmod Artifacts
-        uses: actions/upload-artifact@v4
+      - name: Build and Push Carrier
+        uses: docker/build-push-action@v5
         with:
-          name: kmod-artifacts
-          path: |
-            files/rpms/*.rpm
-            signing_key.x509
+          context: .
+          file: ./Containerfile
+          push: true
+          tags: ghcr.io/${{ github.repository_owner }}/mac80211-carrier:latest
+          build-args: |
+            BAZZITE_VERSION=$(cat version.txt | tr -d '\n')
+
+  bluebuild:
+    name: Build Custom Image
+    needs: build-carrier
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: write
+      id-token: write
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v6
 
       - name: Build Custom Image
         uses: blue-build/github-action@v1.11
         with:
-          recipe: ${{ matrix.recipe }} 
+          recipe: recipes/recipe.yml
           cosign_private_key: ${{ secrets.SIGNING_SECRET }}
           registry_token: ${{ github.token }}
           maximize_build_space: true
-
-  release:
-    name: Create GitHub Release
-    needs: bluebuild
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v6
-
-      - name: Download Kmod Artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: kmod-artifacts
-          path: artifacts
-
-      - name: Generate Release Tag
-        id: vars
-        run: |
-          VER=$(cat version.txt | tr -d '\n')
-          TAG="v${VER}-$(date +%Y%m%d-%H%M)"
-          echo "tag=$TAG" >> $GITHUB_OUTPUT
-          echo "ver=$VER" >> $GITHUB_OUTPUT
-
-      - name: Create Release
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          gh release create ${{ steps.vars.outputs.tag }} \
-            --title "MCS Patch for Bazzite ${{ steps.vars.outputs.ver }}" \
-            --notes "Pre-compiled, signed mac80211 module with skip_mcs_check toggle. Built for Fedora/Bazzite ${{ steps.vars.outputs.ver }}." \
-            artifacts/*.rpm artifacts/signing_key.x509
