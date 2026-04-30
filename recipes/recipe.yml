@@ -6,6 +6,11 @@ base-image: ghcr.io/ublue-os/bazzite
 image-version: 43
 
 modules:
+  - type: copy
+    from: ghcr.io/benem3000/mac80211-carrier:latest
+    src: /rpms/mac80211-kmod.rpm
+    dest: /tmp/mac80211-kmod.rpm
+
   - type: rpm-ostree
     install:
-      - mac80211-kmod.rpm
+      - /tmp/mac80211-kmod.rpm
