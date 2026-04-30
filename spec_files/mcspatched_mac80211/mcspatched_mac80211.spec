@@ -9,8 +9,6 @@ BuildRequires:  make, gcc, kernel-devel, curl, xz
 A dynamically patched mac80211 kernel module to skip basic MCS set validation.
 
 %prep
-# This replaces the first part of your bash script
-# %{_usrsrc}/kernels/%{kversion} is automatically provided by the build system
 KVER_BASE=$(echo %{kversion} | cut -d'-' -f1)
 MAJOR=$(echo ${KVER_BASE} | cut -d'.' -f1)
 
@@ -19,7 +17,6 @@ curl -sL "$URL" | tar -xJ --strip-components=1 "linux-${KVER_BASE}/net/mac80211"
 
 TARGET="net/mac80211/mlme.c"
 
-# Your exact sed logic
 sed -i '/#include <net\/mac80211.h>/a \
 \
 static bool skip_mcs_check = true;\
@@ -31,18 +28,22 @@ for func in ieee80211_verify_sta_ht_mcs_support ieee80211_verify_sta_vht_mcs_sup
 done
 
 %build
-# Compile the module
 make -C /usr/src/kernels/%{kversion} M=$PWD/net/mac80211 modules
 
 %install
-# Install the compiled module into the extra directory
 mkdir -p %{buildroot}/lib/modules/%{kversion}/extra/
+
+SIGN_FILE_PATH=$(find /usr/src/kernels/%{kversion} -name sign-file | head -n 1)
+if [[ -f "%{mok_priv}" ]] && [[ -f "%{mok_x509}" ]]; then
+    $SIGN_FILE_PATH sha512 %{mok_priv} %{mok_x509} net/mac80211/mac80211.ko
+else
+    echo "WARNING: MOK keys not provided, module will be unsigned."
+fi
+
 cp net/mac80211/mac80211.ko %{buildroot}/lib/modules/%{kversion}/extra/
 
-# Replicate your depmod override
 mkdir -p %{buildroot}/usr/lib/depmod.d
 echo "override mac80211 * extra" > %{buildroot}/usr/lib/depmod.d/mac80211-patch.conf
-
 %files
 /lib/modules/%{kversion}/extra/mac80211.ko
 /usr/lib/depmod.d/mac80211-patch.conf
