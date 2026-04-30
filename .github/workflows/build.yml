@@ -49,7 +49,7 @@ jobs:
       - name: Build Custom Image
         uses: blue-build/github-action@v1.11
         with:
-          recipe: recipes/recipe.yml
+          recipe: recipe.yml
           cosign_private_key: ${{ secrets.SIGNING_SECRET }}
           registry_token: ${{ github.token }}
           maximize_build_space: true
