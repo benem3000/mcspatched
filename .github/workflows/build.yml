@@ -1,8 +1,8 @@
 name: Generate Patched Bazzite Build
 on:
-  # push:
-  #   paths:
-  #     - "version.txt"
+  push:
+    paths:
+      - "version.txt"
   workflow_dispatch:
 
 concurrency:
@@ -48,7 +48,19 @@ jobs:
           "
           
           find rpms/ -name '*.rpm' -exec mv {} rpms/ \;
-          rm signing_key.priv signing_key.x509
+          
+          # IMPORTANT CHANGE: We delete the private key for security, 
+          # but we KEEP the public .x509 key so we can upload it for users!
+          rm signing_key.priv 
+
+      # NEW STEP: Save the RPM and Public Key temporarily
+      - name: Upload Kmod Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: kmod-artifacts
+          path: |
+            rpms/*.rpm
+            signing_key.x509
 
       - name: Build Custom Image
         uses: blue-build/github-action@v1.11
@@ -57,3 +69,35 @@ jobs:
           cosign_private_key: ${{ secrets.SIGNING_SECRET }}
           registry_token: ${{ github.token }}
           maximize_build_space: true
+
+  # NEW JOB: Automatically create a GitHub Release with the files attached
+  release:
+    name: Create GitHub Release
+    needs: bluebuild
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v6
+
+      - name: Download Kmod Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: kmod-artifacts
+          path: artifacts
+
+      - name: Generate Release Tag
+        id: vars
+        run: |
+          VER=$(cat version.txt | tr -d '\n')
+          TAG="v${VER}-$(date +%Y%m%d-%H%M)"
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+          echo "ver=$VER" >> $GITHUB_OUTPUT
+
+      - name: Create Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create ${{ steps.vars.outputs.tag }} \
+            --title "MCS Patch for Bazzite ${{ steps.vars.outputs.ver }}" \
+            --notes "Pre-compiled, signed mac80211 module with skip_mcs_check toggle. Built for Fedora/Bazzite ${{ steps.vars.outputs.ver }}." \
+            artifacts/*.rpm artifacts/signing_key.x509
