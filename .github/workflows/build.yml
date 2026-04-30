@@ -36,7 +36,7 @@ jobs:
           echo "$MOK_X509" > signing_key.x509
           
           # 1. Output to files/rpms so BlueBuild automatically copies it
-          mkdir -p files/rpms rpmbuild
+          mkdir -p files/rpm-ostree rpmbuild
           
           BAZZITE_VER=$(cat version.txt | tr -d '\n')
           
@@ -46,14 +46,15 @@ jobs:
             
             rpmbuild -bb spec_files/mcspatched_mac80211/mcspatched_mac80211.spec \
               --define '_topdir /work/rpmbuild' \
+              --define '_rpmdir /work/files/rpm-ostree' \
+              --define '_topdir /work/rpmbuild' \
               --define '_rpmdir /work/files/rpms' \
               --define 'mok_priv /work/signing_key.priv' \
               --define 'mok_x509 /work/signing_key.x509' \
               --define \"kversion \$KVER\"
           "
           
-          # 2. Rename it to a static name inside that folder
-          find files/rpms/ -name '*.rpm' -exec mv {} files/rpms/mac80211-kmod.rpm \;
+          find files/rpm-ostree/ -name '*.rpm' -exec mv {} files/rpm-ostree/mac80211-kmod.rpm \;
           
           rm signing_key.priv
 
