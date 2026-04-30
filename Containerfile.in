@@ -10,7 +10,7 @@ COPY signing_key.x509 /tmp/signing_key.x509
 
 RUN --mount=type=secret,id=mok_priv \
     KVER=$(rpm -q kernel-core --queryformat '%{VERSION}-%{RELEASE}.%{ARCH}' | head -n 1) && \
-    dnf install -y rpm-build make gcc kernel-devel-$KVER curl xz openssl coreutils && \
+    dnf install -y rpm-build make gcc kernel-devel-$KVER curl xz openssl coreutils gnupg2 && \
     mkdir -p /rpms /rpmbuild && \
     rpmbuild -bb /tmp/spec_files/mcspatched_mac80211/mcspatched_mac80211.spec \
       --define '_topdir /rpmbuild' \
