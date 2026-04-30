@@ -1,4 +1,4 @@
-name: Generate Patched Bazzite Build
+name: Generate Kmod
 on:
   push:
     paths:
