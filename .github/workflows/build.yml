@@ -2,19 +2,27 @@ name: Generate Kmod
 on:
   push:
     branches:
-      - akmod
+      - main
   workflow_dispatch:
 
 jobs:
   build-carrier:
     name: Build Carrier Image
     runs-on: ubuntu-latest
+    # Define an output so other jobs can use the dynamic tag
+    outputs:
+      tag: ${{ steps.generate_tag.outputs.tag }}
     permissions:
       contents: read
       packages: write
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v6
+
+      # Generate a unique timestamp-based tag
+      - name: Generate Tag
+        id: generate_tag
+        run: echo "tag=$(date +%Y%m%d-%H%M)" >> $GITHUB_OUTPUT
 
       - name: Prepare Keys
         run: |
@@ -26,13 +34,18 @@ jobs:
 
       - name: Build and Push Carrier (Podman)
         run: |
-          # Podman handles deep layer stacks better than Docker on GH Actions
+          TAG=${{ steps.generate_tag.outputs.tag }}
+          REPO=ghcr.io/${{ github.repository_owner }}/mac80211-carrier
+          
+          # Build with both 'latest' and the dynamic tag
           podman build \
             --build-arg BAZZITE_VERSION=latest \
             -f Containerfile.in \
-            -t ghcr.io/${{ github.repository_owner }}/mac80211-carrier:latest .
+            -t $REPO:latest \
+            -t $REPO:$TAG .
           
-          podman push ghcr.io/${{ github.repository_owner }}/mac80211-carrier:latest
+          podman push $REPO:latest
+          podman push $REPO:$TAG
 
   bluebuild:
     name: Build Custom Image
@@ -53,23 +66,32 @@ jobs:
           cosign_private_key: ${{ secrets.SIGNING_SECRET }}
           registry_token: ${{ github.token }}
           maximize_build_space: true
+
   create-release:
-      name: Create GitHub Release
-      needs: build-carrier
-      runs-on: ubuntu-latest
-      permissions:
-        contents: write
-      steps:
-        - name: Checkout
-          uses: actions/checkout@v6
-  
-        - name: Extract RPM from Carrier
-          run: |
-            podman pull ghcr.io/${{ github.repository_owner }}/mac80211-carrier:latest
-            podman run --rm -v .:/out ghcr.io/${{ github.repository_owner }}/mac80211-carrier:latest cp /rpms/mac80211-kmod.rpm /out/
-  
-        - name: Release
-          uses: softprops/action-gh-release@v2
-          with:
-            tag_name: latest-build
-            files: mac80211-kmod.rpm
+    name: Create GitHub Release
+    needs: build-carrier
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      # Use the specific dynamic tag to ensure we extract the correct version
+      - name: Extract RPM from Carrier
+        run: |
+          TAG=${{ needs.build-carrier.outputs.tag }}
+          REPO=ghcr.io/${{ github.repository_owner }}/mac80211-carrier
+          podman pull $REPO:$TAG
+          podman run --rm -v .:/out $REPO:$TAG cp /rpms/mac80211-kmod.rpm /out/
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ needs.build-carrier.outputs.tag }}
+          name: Release ${{ needs.build-carrier.outputs.tag }}
+          body: |
+            Automated build of the patched mac80211 kernel module for Bazzite.
+            Target Kernel: Latest Bazzite Stable
+          files: mac80211-kmod.rpm
+          generate_release_notes: true
