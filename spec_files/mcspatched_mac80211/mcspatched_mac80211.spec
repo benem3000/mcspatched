@@ -47,3 +47,7 @@ echo "override mac80211 * extra" > %{buildroot}/usr/lib/depmod.d/mac80211-patch.
 %files
 /lib/modules/%{kversion}/extra/mac80211.ko
 /usr/lib/depmod.d/mac80211-patch.conf
+
+%changelog
+* Thu Apr 30 2026 Bazzite Patch <benem3000@users.noreply.github.com> - 1.0-1
+- Initial automated build
