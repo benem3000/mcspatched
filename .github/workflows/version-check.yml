@@ -38,8 +38,8 @@ jobs:
             printf "%s\n" \
               "---" \
               "# yaml-language-server: \$schema=https://schema.blue-build.org/recipe-v1.json" \
-              "name: mcspatched" \
-              "description: Bazzite with toggleable mac80211 patch for Xfinity XB8 compatibility." \
+              "name: mcspatched-bazzite" \
+              "description: Bazzite with a toggleable mac80211 MCS validation patch for certain ISP router compatibility." \
               "" \
               "base-image: ghcr.io/ublue-os/bazzite" \
               "image-version: \"$NEW_FEDORA\"" \
@@ -47,22 +47,7 @@ jobs:
               "modules:" \
               "  - type: rpm-ostree" \
               "    install:" \
-              "      - kernel-devel" \
-              "      - gcc" \
-              "      - make" \
-              "      - patch" \
-              "      - curl" \
-              "      - xz" \
-              "" \
-              "  - type: script" \
-              "    scripts:" \
-              "      - build-mac80211.sh" \
-              "" \
-              "  - type: rpm-ostree" \
-              "    remove:" \
-              "      - kernel-devel" \
-              "      - gcc" \
-              "      - make" \
+              "      - mac80211-kmod" \
               > recipes/recipe.yml
 
             git config --global user.name "github-actions[bot]"
