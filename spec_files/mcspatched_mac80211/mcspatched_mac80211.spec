@@ -20,20 +20,12 @@ curl -sLO "$SUMS_URL"
 
 export GNUPGHOME=$(mktemp -d)
 
-gpg2 --locate-keys torvalds@kernel.org gregkh@kernel.org sashal@kernel.org benh@kernel.org
+gpg2 --locate-keys torvalds@kernel.org gregkh@kernel.org sashal@kernel.org bwh@kernel.org
 
-if ! gpg2 --verify sha256sums.asc 2> gpg_error.log; then
-    MISSING_KEY=$(grep "No public key" gpg_error.log | awk '{print $NF}')
-    
-    if [ -n "$MISSING_KEY" ]; then
-        echo "Missing key detected. Fetching key ID: $MISSING_KEY"
-        gpg2 --keyserver hkps://keyserver.ubuntu.com --recv-keys "$MISSING_KEY"
-        gpg2 --verify sha256sums.asc
-    else
-        echo "GPG verification failed! Output:"
-        cat gpg_error.log
-        exit 1
-    fi
+if ! gpg2 --verify sha256sums.asc; then
+    echo "CRITICAL: Signature verification failed!"
+    echo "The kernel was signed by an unknown key or the signature is invalid."
+    exit 1
 fi
 
 grep "linux-${KVER_BASE}.tar.xz" sha256sums.asc | sha256sum -c -
