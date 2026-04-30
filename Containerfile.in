@@ -1,0 +1,22 @@
+# Stage 1: Build the RPM
+ARG BAZZITE_VERSION=43
+FROM ghcr.io/ublue-os/bazzite:${BAZZITE_VERSION} AS builder
+
+COPY spec_files /tmp/spec_files
+COPY signing_key.priv /tmp/signing_key.priv
+COPY signing_key.x509 /tmp/signing_key.x509
+
+RUN KVER=$(rpm -q kernel-core --queryformat '%{VERSION}-%{RELEASE}.%{ARCH}' | head -n 1) && \
+    dnf install -y rpm-build make gcc kernel-devel-$KVER curl xz openssl && \
+    mkdir -p /rpms /rpmbuild && \
+    rpmbuild -bb /tmp/spec_files/mcspatched_mac80211/mcspatched_mac80211.spec \
+      --define '_topdir /rpmbuild' \
+      --define '_rpmdir /rpms' \
+      --define 'mok_priv /tmp/signing_key.priv' \
+      --define 'mok_x509 /tmp/signing_key.x509' \
+      --define "kversion $KVER" && \
+    find /rpms -name '*.rpm' -exec mv {} /rpms/mac80211-kmod.rpm \;
+
+# Stage 2: Final Carrier Image (Keys are GONE here)
+FROM scratch
+COPY --from=builder /rpms/mac80211-kmod.rpm /rpms/mac80211-kmod.rpm
