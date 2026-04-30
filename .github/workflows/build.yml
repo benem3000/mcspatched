@@ -22,15 +22,16 @@ jobs:
         id: generate_tag
         run: echo "tag=$(date +%Y%m%d-%H%M)" >> $GITHUB_OUTPUT
 
-      - name: Prepare Keys
+      - name: Prepare Public Key
         run: |
-          echo "${{ secrets.MOK_PRIVATE_KEY }}" > signing_key.priv
           echo "${{ secrets.MOK_PUBLIC_KEY }}" > signing_key.x509
 
       - name: Log in to GHCR
         run: echo "${{ github.token }}" | podman login ghcr.io -u ${{ github.actor }} --password-stdin
 
       - name: Build and Push Carrier (Podman)
+        env:
+          MOK_PRIVATE_KEY: ${{ secrets.MOK_PRIVATE_KEY }}
         run: |
           TAG=${{ steps.generate_tag.outputs.tag }}
           REPO=ghcr.io/${{ github.repository_owner }}/mac80211-carrier
