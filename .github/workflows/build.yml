@@ -21,15 +21,18 @@ jobs:
           echo "${{ secrets.MOK_PRIVATE_KEY }}" > signing_key.priv
           echo "${{ secrets.MOK_PUBLIC_KEY }}" > signing_key.x509
 
-      - name: Build and Push Carrier
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          file: ./Containerfile.in
-          push: true
-          tags: ghcr.io/${{ github.repository_owner }}/mac80211-carrier:latest
-          build-args: |
-            BAZZITE_VERSION=latest
+      - name: Log in to GHCR
+        run: echo "${{ github.token }}" | podman login ghcr.io -u ${{ github.actor }} --password-stdin
+
+      - name: Build and Push Carrier (Podman)
+        run: |
+          # Podman handles deep layer stacks better than Docker on GH Actions
+          podman build \
+            --build-arg BAZZITE_VERSION=latest \
+            -f Containerfile.in \
+            -t ghcr.io/${{ github.repository_owner }}/mac80211-carrier:latest .
+          
+          podman push ghcr.io/${{ github.repository_owner }}/mac80211-carrier:latest
 
   bluebuild:
     name: Build Custom Image
