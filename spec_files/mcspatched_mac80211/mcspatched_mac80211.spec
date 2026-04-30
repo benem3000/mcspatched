@@ -18,6 +18,9 @@ SUMS_URL="https://cdn.kernel.org/pub/linux/kernel/v${MAJOR}.x/sha256sums.asc"
 curl -sLO "$URL"
 curl -sLO "$SUMS_URL"
 
+gpg2 --locate-keys torvalds@kernel.org gregkh@kernel.org
+gpg2 --verify sha256sums.asc
+
 grep "linux-${KVER_BASE}.tar.xz" sha256sums.asc | sha256sum -c -
 
 tar -xJf "linux-${KVER_BASE}.tar.xz" --strip-components=1 "linux-${KVER_BASE}/net/mac80211" "linux-${KVER_BASE}/include"
