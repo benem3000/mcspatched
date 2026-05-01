@@ -107,3 +107,6 @@ If you wish to completely remove the custom Secure Boot key from your system's f
 
 ### 4. Reboot your system to apply the changes.
 `systemctl reboot`
+
+## License
+This project provides a patched version of the `mac80211` kernel module, which is part of the Linux kernel. This work is licensed under the **GNU General Public License v2.0**, consistent with the upstream Linux kernel source.
