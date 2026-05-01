@@ -1,6 +1,6 @@
 # MCSPatched &nbsp; [![bluebuild build badge](https://github.com/benem3000/mcspatched/actions/workflows/build.yml/badge.svg)](https://github.com/benem3000/mcspatched/actions/workflows/build.yml)
 
-This repository provides a pre-compiled, toggleable kernel module (mac80211-kmod) for Bazzite and Fedora Atomic desktops. It bypasses basic MCS set validation to resolve Wi-Fi connectivity issues with certain 4x4 access points, such as specific Comcast or Xfinity routers.
+This repository provides a pre-compiled, toggleable kernel module for Bazzite and Fedora Atomic desktops. It bypasses basic MCS set validation to resolve slow connections (under 20mbps) with certain 4x4 access points, such as newer Comcast routers (XB7+).
 
 The included GitHub Actions workflow automatically compiles the module against the latest kernel used by Bazzite, signs it for Secure Boot, and packages it natively into a custom Bazzite image. To ensure system stability, the patch is disabled by default and must be explicitly enabled by the user after installation.
 
@@ -9,15 +9,15 @@ The included GitHub Actions workflow automatically compiles the module against t
 To ensure your system properly imports the signing keys and policies, this is a two-step rebase process.
 
 ### 1. Rebase to the Unsigned Image & Stage MOK
-_Cammands given are used in your terminal (Ctrl+Alt+T)_
+_Commands given are used in your terminal (Ctrl+Alt+T)_
 
 First, rebase to the unverified registry to pull down the initial image containing the proper signing keys and policies:
 
 `rpm-ostree rebase ostree-unverified-registry:ghcr.io/benem3000/mcspatched-bazzite:latest`
 
-**If you have Secure Boot enabled:** You must instruct your firmware to trust the custom Machine Owner Key (MOK) used to sign the module. Navigate to the Releases page of this repository and download the `public_key.der` file attached to the latest release. Run the following command to import the public key:
+**If you have Secure Boot enabled:** You must instruct your firmware to trust the custom Machine Owner Key (MOK) used to sign the module. Because the key is pre-packaged in the custom image, simply run the following command to stage the public key:
 
-`sudo mokutil --import public_key.der`
+`sudo mokutil --import /usr/share/mcspatched/public_key.der`
 
 *(You will be prompted to create a temporary password. Remember this password, as you will need it during the next boot phase.)*
 
@@ -51,22 +51,20 @@ These images are cryptographically signed. You can verify the signature by downl
 `cosign verify --key cosign.pub ghcr.io/benem3000/mcspatched-bazzite`
 
 ## Removal
-If you need to revert to the stock Wi-Fi behavior, you can rebase back to the standard Bazzite image and remove the kernel argument:
+If you need to revert to the stock Wi-Fi behavior, you should unenroll the security key before leaving the custom image.
 
 ### 1. Delete the kernel argument:
-
 `sudo rpm-ostree kargs --delete="mac80211.skip_mcs_check=1"`
 
-### 2. Rebase back to standard Bazzite:
+### 2. Unenroll the Secure Boot Key (Optional)
+If you wish to completely remove the custom Secure Boot key from your system's firmware, run:
 
+`sudo mokutil --delete /usr/share/mcspatched/public_key.der`
+
+*(You will be prompted to create a temporary password before rebooting. In the MOKManager screen, select "Delete MOK", confirm the key details, and enter the temporary password to finalize the removal.)*
+
+### 3. Rebase back to standard Bazzite:
 `rpm-ostree rebase ostree-image-signed:docker://ghcr.io/ublue-os/bazzite:stable`
-
-### 3. Unenroll the Secure Boot Key (Optional)
-If you wish to completely remove the custom Secure Boot key from your system's firmware, navigate to the directory containing the `public_key.der` file and run:
-
-`sudo mokutil --delete public_key.der`
 
 ### 4. Reboot your system to apply the changes.
 `systemctl reboot`
-
-*(If you unenrolled the MOK, you will be prompted to create a temporary password before rebooting. In the MOKManager screen, select "Delete MOK", confirm the key details, and enter the temporary password to finalize the removal.)*
