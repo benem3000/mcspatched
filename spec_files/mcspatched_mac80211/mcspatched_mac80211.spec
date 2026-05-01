@@ -6,13 +6,12 @@ Release:        %{?build_tag}%{!?build_tag:1}%{?dist}
 Summary:        Patched mac80211 kernel module for 4x4 AP compatibility
 License:        GPLv2
 
-BuildRequires:  make, gcc, kernel-devel, curl, xz, binutils, koji, zstd, cpio
+BuildRequires:  make, gcc, kernel-devel, curl, xz, binutils, zstd, cpio
 
 %description
 A dynamically patched mac80211 kernel module to skip basic MCS set validation.
 
 %prep
-KVER_NVR=$(echo "%{kversion}" | sed 's/\.[^.]*$//')
 dnf download --source kernel-%{kversion}
 
 rpm2cpio kernel-*.src.rpm | cpio -idmv
