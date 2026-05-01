@@ -22,7 +22,7 @@ curl -sLO "$URL"
 
 tar -xJf "linux-${KVER_BASE}.tar.xz" --strip-components=1 "linux-${KVER_BASE}/net/mac80211" "linux-${KVER_BASE}/include"
 
-patch -p1 < %{SOURCE0}
+patch -d net/mac80211 -p0 < %{SOURCE0}
 
 %build
 make -C /usr/src/kernels/%{kversion} M=$PWD/net/mac80211 modules
