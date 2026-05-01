@@ -6,31 +6,18 @@ Release:        %{?build_tag}%{!?build_tag:1}%{?dist}
 Summary:        Patched mac80211 kernel module for 4x4 AP compatibility
 License:        GPLv2
 
-BuildRequires:  make, gcc, kernel-devel, curl, xz, binutils
+BuildRequires:  make, gcc, kernel-devel, curl, xz, binutils, koji, zstd, cpio
 
 %description
 A dynamically patched mac80211 kernel module to skip basic MCS set validation.
 
 %prep
-KVER_BASE=$(echo %{kversion} | cut -d'-' -f1)
-MAJOR=$(echo ${KVER_BASE} | cut -d'.' -f1)
+# Download the exact SRPM for your active kernel from Fedora Koji
+koji download-build --arch=src kernel-%{kversion}
 
-URL="https://cdn.kernel.org/pub/linux/kernel/v${MAJOR}.x/linux-${KVER_BASE}.tar.xz"
-SUMS_URL="https://cdn.kernel.org/pub/linux/kernel/v${MAJOR}.x/sha256sums.asc"
-
-curl -sLO "$URL"
-curl -sLO "$SUMS_URL"
-
-export GNUPGHOME=$(mktemp -d)
-gpg2 --locate-keys torvalds@kernel.org gregkh@kernel.org sashal@kernel.org bwh@kernel.org autosigner@kernel.org
-
-if ! gpg2 --verify sha256sums.asc; then
-    echo "CRITICAL: Signature verification failed!"
-    exit 1
-fi
-
-grep "linux-${KVER_BASE}.tar.xz" sha256sums.asc | sha256sum -c -
-tar -xJf "linux-${KVER_BASE}.tar.xz" --strip-components=1 "linux-${KVER_BASE}/net/mac80211" "linux-${KVER_BASE}/include"
+# Extract the SRPM, then extract the specific directories from the tarball inside
+rpm2cpio kernel-%{kversion}.src.rpm | cpio -idmv
+tar -xJf linux-*.tar.xz --strip-components=1 "linux-*/net/mac80211" "linux-*/include"
 
 TARGET="net/mac80211/mlme.c"
 
@@ -53,23 +40,37 @@ mkdir -p %{buildroot}/lib/modules/%{kversion}/extra/net/mac80211/
 strip --strip-debug net/mac80211/mac80211.ko
 
 SIGN_FILE_PATH=$(find /usr/src/kernels/%{kversion} -name sign-file | head -n 1)
-if [[ -f "%{mok_priv}" ]] && [[ -f "%{mok_x509}" ]]; then
-    $SIGN_FILE_PATH sha512 %{mok_priv} %{mok_x509} net/mac80211/mac80211.ko
-else
-    echo "WARNING: MOK keys not provided, module will be unsigned."
+
+if [[ -z "$SIGN_FILE_PATH" ]]; then
+    echo "CRITICAL: Kernel sign-file utility not found!"
+    exit 1
 fi
 
-install -m 755 net/mac80211/mac80211.ko %{buildroot}/lib/modules/%{kversion}/extra/net/mac80211/mac80211.ko
+if [[ ! -f "%{mok_priv}" ]] || [[ ! -f "%{mok_x509}" ]]; then
+    echo "CRITICAL: MOK keys are missing. Refusing to build unsigned module."
+    exit 1
+fi
+
+# Sign the module
+$SIGN_FILE_PATH sha512 %{mok_priv} %{mok_x509} net/mac80211/mac80211.ko
+
+# Compress the signed module
+zstd -q -19 --rm net/mac80211/mac80211.ko
+
+# Install compressed module
+install -m 755 net/mac80211/mac80211.ko.zst %{buildroot}/lib/modules/%{kversion}/extra/net/mac80211/mac80211.ko.zst
 
 mkdir -p %{buildroot}/usr/lib/depmod.d
 echo "override mac80211 * extra/net/mac80211" > %{buildroot}/usr/lib/depmod.d/mac80211-patch.conf
 
 %files
-/lib/modules/%{kversion}/extra/net/mac80211/mac80211.ko
+/lib/modules/%{kversion}/extra/net/mac80211/mac80211.ko.zst
 /usr/lib/depmod.d/mac80211-patch.conf
 
 %changelog
 * Fri May 01 2026 Bazzite Patch <benem3000@users.noreply.github.com> - 2.0-2
+- Migrated to Fedora Koji sources to ensure strict ABI compatibility
+- Added mandatory zstd module compression
 - Manually stripped debug symbols to fix binary bloat and boot loader rejection
 - Mirrored kernel directory structure under /extra for improved priority
 - Set module permissions to 755 to match stock modules
