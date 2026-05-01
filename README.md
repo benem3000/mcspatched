@@ -2,69 +2,71 @@
 
 This repository provides a pre-compiled, toggleable kernel module (mac80211-kmod) for Bazzite and Fedora Atomic desktops. It bypasses basic MCS set validation to resolve Wi-Fi connectivity issues with certain 4x4 access points, such as specific Comcast or Xfinity routers.
 
-The included GitHub Actions workflow automatically compiles the module against the latest kernel used by Bazzite, signs it for Secure Boot, and packages it as an RPM. To ensure system stability, the patch is disabled by default and must be explicitly enabled by the user after installation.
+The included GitHub Actions workflow automatically compiles the module against the latest kernel used by Bazzite, signs it for Secure Boot, and packages it natively into a custom Bazzite image. To ensure system stability, the patch is disabled by default and must be explicitly enabled by the user after installation.
 
 ## Installation
-Because this is a layered package for an atomic operating system, you will use rpm-ostree to install the module directly over your base image.
 
-### 1. Download the Files
-Navigate to the Releases page of this repository. Download the two files attached to the latest release:
+To ensure your system properly imports the signing keys and policies, this is a two-step rebase process.
 
-`mac80211-kmod-*.rpm`
+### 1. Rebase to the Unsigned Image & Stage MOK
+_Cammands given are used in your terminal (Ctrl+Alt+T)_
 
-`signing_key.x509`
+First, rebase to the unverified registry to pull down the initial image containing the proper signing keys and policies:
 
-### 2. Install the Kernel Module
-Open your terminal in the directory where you downloaded the files and run the following command to layer the package:
+`rpm-ostree rebase ostree-unverified-registry:ghcr.io/benem3000/mcspatched-bazzite:latest`
 
-`rpm-ostree install ./mac80211-kmod-*.rpm`
-### 3. Enroll the Secure Boot Key (optional)
-The kernel module is signed using a custom Machine Owner Key (MOK) generated during the build process. If you have Secure Boot enabled in your BIOS, you must instruct your system to trust this key.
+**If you have Secure Boot enabled:** You must instruct your firmware to trust the custom Machine Owner Key (MOK) used to sign the module. Navigate to the Releases page of this repository and download the `public_key.der` file attached to the latest release. Run the following command to import the public key:
 
-Run the following command to import the public key:
+`sudo mokutil --import public_key.der`
 
-`sudo mokutil --import signing_key.x509`
-You will be prompted to create a temporary password. Remember this password, as you will need it during the next boot phase.
+*(You will be prompted to create a temporary password. Remember this password, as you will need it during the next boot phase.)*
+
+### 2. First Reboot
+Reboot your machine:
+
+`systemctl reboot`
+
+*If you enrolled the Secure Boot key:* You will be intercepted by a blue screen (MOKManager) during startup. Select "Enroll MOK", view the key to confirm it, and enter the temporary password you created. Once complete, select reboot to finish loading the OS.
+
+### 3. Rebase to the Signed Image
+Now that the signing keys and policies are installed from the first step, secure your system by rebasing to the cryptographically signed image:
+
+`rpm-ostree rebase ostree-image-signed:docker://ghcr.io/benem3000/mcspatched-bazzite:latest`
 
 ### 4. Enable the Patch
-By default, the installed module behaves exactly like the stock Fedora kernel module. To activate the MCS validation bypass, you need to set a module parameter.
+By default, the installed module behaves exactly like the stock Fedora kernel module. To activate the MCS validation bypass, enable the toggle by appending the kernel argument:
 
-Create a modprobe drop-in file by running:
+`sudo rpm-ostree kargs --append="mac80211.skip_mcs_check=1"`
 
-`echo "options mac80211 skip_mcs_check=1" | sudo tee /etc/modprobe.d/mac80211-mcs.conf`
+### 5. Final Reboot
+Reboot your system one last time to apply the signed image and the kernel argument:
 
-### 5. Rebuild the boot image
-Since mac80211 is a core module, you must force the system to rebuild the local boot image to include your new override. Run the following command:
-
-`sudo rpm-ostree initramfs --enable`
-
-### 6. Reboot and Apply
-Reboot your machine.
-
-If you enrolled the key in step 3, you will be intercepted by a blue screen (MOKManager). Select Enroll MOK, view the key to confirm it, and enter the temporary password you created in Step 3. Once complete, select reboot.
+`systemctl reboot`
 
 When your system boots back up, the patched module will be active and you should be able to connect to the problematic access point.
 
+## Verification
+These images are cryptographically signed. You can verify the signature by downloading the `cosign.pub` file from this repository and running the following command:
+
+`cosign verify --key cosign.pub ghcr.io/benem3000/mcspatched-bazzite`
+
 ## Removal
-If you need to revert to the stock Wi-Fi behavior, you can uninstall the module and remove the configuration file:
+If you need to revert to the stock Wi-Fi behavior, you can rebase back to the standard Bazzite image and remove the kernel argument:
 
-### 1. Delete the modprobe configuration:
-_If you have other settings in this file, you'll need to modify it manually._
+### 1. Delete the kernel argument:
 
-`sudo rm /etc/modprobe.d/mac80211-mcs.conf`
+`sudo rpm-ostree kargs --delete="mac80211.skip_mcs_check=1"`
 
-### 2. Remove the layered RPM:
+### 2. Rebase back to standard Bazzite:
 
-`rpm-ostree uninstall mac80211-kmod`
+`rpm-ostree rebase ostree-image-signed:docker://ghcr.io/ublue-os/bazzite:stable`
 
 ### 3. Unenroll the Secure Boot Key (Optional)
+If you wish to completely remove the custom Secure Boot key from your system's firmware, navigate to the directory containing the `public_key.der` file and run:
 
-If you wish to completely remove the custom Secure Boot key from your system's firmware, you will need the original `signing_key.x509` file you downloaded from the release. 
-
-Navigate to the directory containing the key and run:
-
-`sudo mokutil --delete signing_key.x509`
+`sudo mokutil --delete public_key.der`
 
 ### 4. Reboot your system to apply the changes.
+`systemctl reboot`
 
-You will be prompted to create a temporary password just as before. Reboot your machine to enter the MOKManager screen. Select Delete MOK, confirm the key details, and enter the temporary password to finalize the removal.
+*(If you unenrolled the MOK, you will be prompted to create a temporary password before rebooting. In the MOKManager screen, select "Delete MOK", confirm the key details, and enter the temporary password to finalize the removal.)*
