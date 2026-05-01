@@ -48,7 +48,7 @@ done
 make -C /usr/src/kernels/%{kversion} M=$PWD/net/mac80211 modules
 
 %install
-mkdir -p %{buildroot}/lib/modules/%{kversion}/extra/net/mac80211/
+mkdir -p %{buildroot}/lib/modules/%{kversion}/updates/net/mac80211/
 
 strip --strip-debug net/mac80211/mac80211.ko
 
@@ -59,17 +59,15 @@ else
     echo "WARNING: MOK keys not provided, module will be unsigned."
 fi
 
-install -m 755 net/mac80211/mac80211.ko %{buildroot}/lib/modules/%{kversion}/extra/net/mac80211/mac80211.ko
+install -m 755 net/mac80211/mac80211.ko %{buildroot}/lib/modules/%{kversion}/updates/net/mac80211/mac80211.ko
 
-mkdir -p %{buildroot}/usr/lib/depmod.d
-echo "override mac80211 * extra/net/mac80211" > %{buildroot}/usr/lib/depmod.d/mac80211-patch.conf
 
 %files
-/lib/modules/%{kversion}/extra/net/mac80211/mac80211.ko
-/usr/lib/depmod.d/mac80211-patch.conf
+/lib/modules/%{kversion}/updates/net/mac80211/mac80211.ko
 
 %changelog
-* Fri May 01 2026 Bazzite Patch <benem3000@users.noreply.github.com> - 2.0-2
-- Manually stripped debug symbols to fix binary bloat and boot loader rejection
-- Mirrored kernel directory structure under /extra for improved priority
+* Fri May 01 2026 Bazzite Patch <benem3000@users.noreply.github.com> - 2.0-3
+- Migrated module from extra/ to updates/ to exploit inherent Fedora search priority
+- Removed depmod.d override to bypass rpm-ostree compose bug
+- Manually stripped debug symbols to fix binary bloat
 - Set module permissions to 755 to match stock modules
