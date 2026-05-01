@@ -1,4 +1,4 @@
-# MCSPatched &nbsp; [![bluebuild build badge](https://github.com/benem3000/mcspatched/actions/workflows/build.yml/badge.svg)](https://github.com/benem3000/mcspatched/actions/workflows/build.yml)
+# MCSPatched &nbsp; [![Generate Kmod](https://github.com/benem3000/mcspatched/actions/workflows/build.yml/badge.svg)](https://github.com/benem3000/mcspatched/actions/workflows/build.yml)
 
 # !DO NOT USE YET UNTIL THIS COMMENT IS REMOVED!
 
