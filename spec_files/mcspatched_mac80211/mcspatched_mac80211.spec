@@ -5,7 +5,8 @@ Version:        2.0
 Release:        %{?build_tag}%{!?build_tag:1}%{?dist}
 Summary:        Patched mac80211 kernel module for 4x4 AP compatibility
 License:        GPLv2
-BuildRequires:  make, gcc, kernel-devel, curl, xz
+
+BuildRequires:  make, gcc, kernel-devel, curl, xz, binutils
 
 %description
 A dynamically patched mac80211 kernel module to skip basic MCS set validation.
@@ -47,26 +48,28 @@ done
 make -C /usr/src/kernels/%{kversion} M=$PWD/net/mac80211 modules
 
 %install
-mkdir -p %{buildroot}/lib/modules/%{kversion}/extra/
+mkdir -p %{buildroot}/lib/modules/%{kversion}/extra/net/mac80211/
+
+strip --strip-debug net/mac80211/mac80211.ko
 
 SIGN_FILE_PATH=$(find /usr/src/kernels/%{kversion} -name sign-file | head -n 1)
-
 if [[ -f "%{mok_priv}" ]] && [[ -f "%{mok_x509}" ]]; then
     $SIGN_FILE_PATH sha512 %{mok_priv} %{mok_x509} net/mac80211/mac80211.ko
 else
     echo "WARNING: MOK keys not provided, module will be unsigned."
 fi
 
-cp net/mac80211/mac80211.ko %{buildroot}/lib/modules/%{kversion}/extra/
+install -m 755 net/mac80211/mac80211.ko %{buildroot}/lib/modules/%{kversion}/extra/net/mac80211/mac80211.ko
 
 mkdir -p %{buildroot}/usr/lib/depmod.d
-echo "override mac80211 * extra" > %{buildroot}/usr/lib/depmod.d/mac80211-patch.conf
+echo "override mac80211 * extra/net/mac80211" > %{buildroot}/usr/lib/depmod.d/mac80211-patch.conf
 
 %files
-/lib/modules/%{kversion}/extra/mac80211.ko
+/lib/modules/%{kversion}/extra/net/mac80211/mac80211.ko
 /usr/lib/depmod.d/mac80211-patch.conf
 
 %changelog
-* Thu Apr 30 2026 Bazzite Patch <benem3000@users.noreply.github.com> - 2.0-1
-- Disabled post-install stripping to preserve MOK signatures
-- Set installation path to /extra/ as requested
+* Fri May 01 2026 Bazzite Patch <benem3000@users.noreply.github.com> - 2.0-2
+- Manually stripped debug symbols to fix binary bloat and boot loader rejection
+- Mirrored kernel directory structure under /extra for improved priority
+- Set module permissions to 755 to match stock modules
