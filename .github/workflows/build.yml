@@ -105,7 +105,7 @@ jobs:
 
   create-release:
     name: Create GitHub Release
-    needs: [check-version, build-carrier]
+    needs: [check-version, bluebuild]
     if: needs.check-version.outputs.should_build == 'true'
     runs-on: ubuntu-latest
     permissions:
@@ -113,24 +113,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v6
-
-      - name: Prepare Public Key
-        run: |
-          echo "${{ secrets.MOK_PUBLIC_KEY }}" > signing_key.pem
-          openssl x509 -in signing_key.pem -outform DER -out public_key.der
-
-      - name: Log in to GHCR
-        run: echo "${{ github.token }}" | podman login ghcr.io -u ${{ github.actor }} --password-stdin
-
-      - name: Extract RPM from Carrier
-        run: |
-          TAG=${{ needs.check-version.outputs.tag }}
-          REPO=ghcr.io/${{ github.repository_owner }}/mac80211-carrier
-          
-          podman pull $REPO:$TAG
-          CONTAINER_ID=$(podman create $REPO:$TAG true)
-          podman cp $CONTAINER_ID:/rpms/mac80211-kmod.rpm .
-          podman rm -f $CONTAINER_ID
 
       - name: Create Release
         uses: softprops/action-gh-release@v2
@@ -140,7 +122,4 @@ jobs:
           body: |
             Automated build of the patched mac80211 kernel module for Bazzite.
             Target Kernel: Latest Bazzite Stable
-          files: |
-            mac80211-kmod.rpm
-            public_key.der
           generate_release_notes: true
