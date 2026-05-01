@@ -13,9 +13,9 @@ A dynamically patched mac80211 kernel module to skip basic MCS set validation.
 
 %prep
 KVER_NVR=$(echo "%{kversion}" | sed 's/\.[^.]*$//')
-koji download-build --arch=src kernel-${KVER_NVR}
+dnf download --source kernel-%{kversion}
 
-rpm2cpio kernel-${KVER_NVR}.src.rpm | cpio -idmv
+rpm2cpio kernel-*.src.rpm | cpio -idmv
 tar -xJf linux-*.tar.xz --strip-components=1 "linux-*/net/mac80211" "linux-*/include"
 
 TARGET="net/mac80211/mlme.c"
