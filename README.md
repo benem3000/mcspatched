@@ -2,13 +2,13 @@
 
 # !DO NOT USE YET UNTIL THIS COMMENT IS REMOVED!
 
-This repository provides a pre-compiled, toggleable kernel module (mac80211-kmod) for Bazzite and Fedora Atomic desktops. It bypasses basic MCS set validation to resolve Wi-Fi connectivity issues with certain 4x4 access points, such as specific Comcast or Xfinity routers.
+This repository provides a pre-compiled, toggleable kernel module for Bazzite and Fedora Atomic desktops. It bypasses basic MCS set validation to resolve Wi-Fi connectivity issues with certain 4x4 access points, such as newer Comcast gateways (XB7+).
 
-The included GitHub Actions workflow automatically compiles the module against the latest kernel used by Bazzite, signs it for Secure Boot, and packages it natively into a custom Bazzite image. To ensure system stability, the patch is disabled by default and must be explicitly enabled by the user after installation.
+The patch is disabled by default and must be explicitly enabled after installation.
 
 ## Installation
 
-To ensure your system properly imports the signing keys and policies, this is a two-step rebase process.
+To ensure your system properly imports the signing keys and policies, there is a two-step rebase process.
 
 ### 1. Rebase to the Unsigned Image & Stage MOK
 _Commands given are used in your terminal (Ctrl+Alt+T)_
@@ -17,18 +17,16 @@ First, rebase to the unverified registry to pull down the initial image containi
 
 `rpm-ostree rebase ostree-unverified-registry:ghcr.io/benem3000/mcspatched-bazzite:latest`
 
-**If you have Secure Boot enabled:** You must instruct your firmware to trust the custom Machine Owner Key (MOK) used to sign the module. Because the key is pre-packaged in the custom image, simply run the following command to stage the public key:
-
-`sudo mokutil --import /usr/share/mcspatched/public_key.der`
-
-*(You will be prompted to create a temporary password. Remember this password, as you will need it during the next boot phase.)*
-
 ### 2. First Reboot
 Reboot your machine:
 
 `systemctl reboot`
 
-*If you enrolled the Secure Boot key:* You will be intercepted by a blue screen (MOKManager) during startup. Select "Enroll MOK", view the key to confirm it, and enter the temporary password you created. Once complete, select reboot to finish loading the OS.
+**If you have Secure Boot enabled:** You must instruct your firmware to trust the custom Machine Owner Key (MOK) used to sign the module. Because the key is pre-packaged in the custom image, simply run the following command to stage the public key:
+
+`sudo mokutil --import /usr/share/mcspatched/public_key.der`
+
+*(You will be prompted to create a temporary password. Remember this password, as you will need it during the next boot phase.)*
 
 ### 3. Rebase to the Signed Image
 Now that the signing keys and policies are installed from the first step, secure your system by rebasing to the cryptographically signed image:
@@ -42,6 +40,7 @@ By default, the installed module behaves exactly like the stock Fedora kernel mo
 
 ### 5. Final Reboot
 Reboot your system one last time to apply the signed image and the kernel argument:
+*If you enrolled the Secure Boot key:* You will be intercepted by a blue screen (MOKManager) during startup. Select "Enroll MOK", view the key to confirm it, and enter the temporary password you created. Once complete, select reboot to finish loading the OS.
 
 `systemctl reboot`
 
