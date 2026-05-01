@@ -1,26 +1,61 @@
 name: Generate Kmod
 on:
+  schedule:
+    - cron: '0 0 * * *'
   push:
     branches:
       - main
   workflow_dispatch:
 
 jobs:
-  build-carrier:
-    name: Build Carrier Image
+  check-version:
+    name: Check for New Bazzite Release
     runs-on: ubuntu-latest
     outputs:
-      tag: ${{ steps.generate_tag.outputs.tag }}
+      should_build: ${{ steps.compare.outputs.should_build }}
+      tag: ${{ steps.compare.outputs.tag }}
+    steps:
+      - name: Compare Versions
+        id: compare
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          podman pull ghcr.io/ublue-os/bazzite:latest
+          BAZZITE_VER=$(podman run --rm ghcr.io/ublue-os/bazzite:latest bash -c 'source /etc/os-release && echo ${OSTREE_VERSION}')
+          
+          if [ -z "$BAZZITE_VER" ]; then
+            echo "Failed to retrieve Bazzite version."
+            exit 1
+          fi
+          
+          LATEST_RELEASE=$(gh release view --json tagName -q ".tagName" 2>/dev/null || echo "none")
+          
+          echo "Upstream Bazzite Version: $BAZZITE_VER"
+          echo "Local Latest Release: $LATEST_RELEASE"
+          
+          if [[ "$GITHUB_EVENT_NAME" == "workflow_dispatch" ]] || [[ "$GITHUB_EVENT_NAME" == "push" ]]; then
+            echo "should_build=true" >> $GITHUB_OUTPUT
+            echo "tag=${BAZZITE_VER}-r${{ github.run_number }}" >> $GITHUB_OUTPUT
+          elif [[ "$LATEST_RELEASE" == "$BAZZITE_VER"* ]]; then
+            echo "should_build=false" >> $GITHUB_OUTPUT
+          else
+            echo "should_build=true" >> $GITHUB_OUTPUT
+            echo "tag=${BAZZITE_VER}-r${{ github.run_number }}" >> $GITHUB_OUTPUT
+          fi
+
+  build-carrier:
+    name: Build Carrier Image
+    needs: check-version
+    if: needs.check-version.outputs.should_build == 'true'
+    runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ needs.check-version.outputs.tag }}
     permissions:
       contents: read
       packages: write
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v6
-
-      - name: Generate Tag
-        id: generate_tag
-        run: echo "tag=$(date +%Y%m%d-%H%M)" >> $GITHUB_OUTPUT
 
       - name: Prepare Public Key
         run: |
@@ -33,7 +68,7 @@ jobs:
         env:
           MOK_PRIVATE_KEY: ${{ secrets.MOK_PRIVATE_KEY }}
         run: |
-          TAG=${{ steps.generate_tag.outputs.tag }}
+          TAG=${{ needs.check-version.outputs.tag }}
           REPO=ghcr.io/${{ github.repository_owner }}/mac80211-carrier
           
           podman build \
@@ -49,7 +84,8 @@ jobs:
 
   bluebuild:
     name: Build Custom Image
-    needs: build-carrier
+    needs: [check-version, build-carrier]
+    if: needs.check-version.outputs.should_build == 'true'
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -69,7 +105,8 @@ jobs:
 
   create-release:
     name: Create GitHub Release
-    needs: build-carrier
+    needs: [check-version, build-carrier]
+    if: needs.check-version.outputs.should_build == 'true'
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -85,7 +122,7 @@ jobs:
 
       - name: Extract RPM from Carrier
         run: |
-          TAG=${{ needs.build-carrier.outputs.tag }}
+          TAG=${{ needs.check-version.outputs.tag }}
           REPO=ghcr.io/${{ github.repository_owner }}/mac80211-carrier
           
           podman pull $REPO:$TAG
@@ -96,8 +133,8 @@ jobs:
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ needs.build-carrier.outputs.tag }}
-          name: Release ${{ needs.build-carrier.outputs.tag }}
+          tag_name: ${{ needs.check-version.outputs.tag }}
+          name: Release ${{ needs.check-version.outputs.tag }}
           body: |
             Automated build of the patched mac80211 kernel module for Bazzite.
             Target Kernel: Latest Bazzite Stable
