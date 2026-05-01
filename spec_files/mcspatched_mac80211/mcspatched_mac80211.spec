@@ -48,7 +48,7 @@ done
 make -C /usr/src/kernels/%{kversion} M=$PWD/net/mac80211 modules
 
 %install
-mkdir -p %{buildroot}/lib/modules/%{kversion}/extra/
+mkdir -p %{buildroot}/lib/modules/%{kversion}/extra/net/mac80211
 
 SIGN_FILE_PATH=$(find /usr/src/kernels/%{kversion} -name sign-file | head -n 1)
 if [[ -f "%{mok_priv}" ]] && [[ -f "%{mok_x509}" ]]; then
@@ -57,7 +57,7 @@ else
     echo "WARNING: MOK keys not provided, module will be unsigned."
 fi
 
-cp net/mac80211/mac80211.ko %{buildroot}/lib/modules/%{kversion}/extra/
+cp net/mac80211/mac80211.ko %{buildroot}/lib/modules/%{kversion}/extra/net/mac80211/
 
 mkdir -p %{buildroot}/usr/lib/depmod.d
 echo "override mac80211 * extra" > %{buildroot}/usr/lib/depmod.d/mac80211-patch.conf
