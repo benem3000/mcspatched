@@ -12,9 +12,11 @@ BuildRequires:  make, gcc, kernel-devel, curl, xz, binutils, zstd, cpio
 A dynamically patched mac80211 kernel module to skip basic MCS set validation.
 
 %prep
-dnf download --source --enablerepo=fedora-source,updates-source kernel-%{kversion}
+KERNEL_PKG=$(rpm -q kernel-core)
+dnf download --source --enablerepo='*source*' ${KERNEL_PKG}
 
-rpm2cpio kernel-*.src.rpm | cpio -idmv
+rpm2cpio *.src.rpm | cpio -idmv
+
 tar -xJf linux-*.tar.xz --strip-components=1 "linux-*/net/mac80211" "linux-*/include"
 
 TARGET="net/mac80211/mlme.c"
