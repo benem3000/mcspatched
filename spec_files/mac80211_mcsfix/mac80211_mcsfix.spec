@@ -33,7 +33,7 @@ grep "linux-${KVER_BASE}.tar.xz" sha256sums.asc | sha256sum -c -
 
 tar -xJf "linux-${KVER_BASE}.tar.xz" --strip-components=1 "linux-${KVER_BASE}/net/mac80211" "linux-${KVER_BASE}/include"
 
-patch -d net/mac80211 -p0 < %{SOURCE0}
+patch -d net/mac80211 -p0 < %{SOURCE0} || exit 1
 %build
 make -C /usr/src/kernels/%{kversion} M=$PWD/net/mac80211 modules
 
