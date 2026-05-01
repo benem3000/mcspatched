@@ -32,7 +32,13 @@ By default, the installed module behaves exactly like the stock Fedora kernel mo
 Create a modprobe drop-in file by running:
 
 `echo "options mac80211 skip_mcs_check=1" | sudo tee /etc/modprobe.d/mac80211-mcs.conf`
-### 5. Reboot and Apply
+
+### 5. Rebuild the boot image
+Since mac80211 is a core module, you must force the system to rebuild the local boot image to include your new override. Run the following command:
+
+`sudo rpm-ostree initramfs --enable`
+
+### 6. Reboot and Apply
 Reboot your machine.
 
 If you enrolled the key in step 3, you will be intercepted by a blue screen (MOKManager). Select Enroll MOK, view the key to confirm it, and enter the temporary password you created in Step 3. Once complete, select reboot.
