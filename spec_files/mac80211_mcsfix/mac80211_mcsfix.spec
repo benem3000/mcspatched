@@ -19,11 +19,21 @@ MAJOR=$(echo ${KVER_BASE} | cut -d'.' -f1)
 
 URL="https://cdn.kernel.org/pub/linux/kernel/v${MAJOR}.x/linux-${KVER_BASE}.tar.xz"
 curl -sLO "$URL"
+curl -sLO "https://cdn.kernel.org/pub/linux/kernel/v${MAJOR}.x/sha256sums.asc"
+
+export GNUPGHOME=$(mktemp -d)
+gpg2 --locate-keys torvalds@kernel.org gregkh@kernel.org sashal@kernel.org bwh@kernel.org autosigner@kernel.org
+
+if ! gpg2 --verify sha256sums.asc; then
+    echo "CRITICAL: Kernel signature verification failed!"
+    exit 1
+fi
+
+grep "linux-${KVER_BASE}.tar.xz" sha256sums.asc | sha256sum -c -
 
 tar -xJf "linux-${KVER_BASE}.tar.xz" --strip-components=1 "linux-${KVER_BASE}/net/mac80211" "linux-${KVER_BASE}/include"
 
 patch -d net/mac80211 -p0 < %{SOURCE0}
-
 %build
 make -C /usr/src/kernels/%{kversion} M=$PWD/net/mac80211 modules
 
