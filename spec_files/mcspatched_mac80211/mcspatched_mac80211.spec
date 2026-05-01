@@ -1,3 +1,5 @@
+%global __os_install_post %{nil}
+
 Name:           mac80211-kmod
 Version:        2.0
 Release:        %{?build_tag}%{!?build_tag:1}%{?dist}
@@ -19,17 +21,14 @@ curl -sLO "$URL"
 curl -sLO "$SUMS_URL"
 
 export GNUPGHOME=$(mktemp -d)
-
 gpg2 --locate-keys torvalds@kernel.org gregkh@kernel.org sashal@kernel.org bwh@kernel.org autosigner@kernel.org
 
 if ! gpg2 --verify sha256sums.asc; then
     echo "CRITICAL: Signature verification failed!"
-    echo "The kernel was signed by an unknown key or the signature is invalid."
     exit 1
 fi
 
 grep "linux-${KVER_BASE}.tar.xz" sha256sums.asc | sha256sum -c -
-
 tar -xJf "linux-${KVER_BASE}.tar.xz" --strip-components=1 "linux-${KVER_BASE}/net/mac80211" "linux-${KVER_BASE}/include"
 
 TARGET="net/mac80211/mlme.c"
@@ -48,23 +47,26 @@ done
 make -C /usr/src/kernels/%{kversion} M=$PWD/net/mac80211 modules
 
 %install
-mkdir -p %{buildroot}/lib/modules/%{kversion}/extra/mac80211
+mkdir -p %{buildroot}/lib/modules/%{kversion}/extra/
 
 SIGN_FILE_PATH=$(find /usr/src/kernels/%{kversion} -name sign-file | head -n 1)
+
 if [[ -f "%{mok_priv}" ]] && [[ -f "%{mok_x509}" ]]; then
     $SIGN_FILE_PATH sha512 %{mok_priv} %{mok_x509} net/mac80211/mac80211.ko
 else
     echo "WARNING: MOK keys not provided, module will be unsigned."
 fi
 
-cp net/mac80211/mac80211.ko %{buildroot}/lib/modules/%{kversion}/extra/mac80211/
+cp net/mac80211/mac80211.ko %{buildroot}/lib/modules/%{kversion}/extra/
 
 mkdir -p %{buildroot}/usr/lib/depmod.d
 echo "override mac80211 * extra" > %{buildroot}/usr/lib/depmod.d/mac80211-patch.conf
+
 %files
-/lib/modules/%{kversion}/extra/mac80211/mac80211.ko
+/lib/modules/%{kversion}/extra/mac80211.ko
 /usr/lib/depmod.d/mac80211-patch.conf
 
 %changelog
-* Thu Apr 30 2026 Bazzite Patch <benem3000@users.noreply.github.com> - 1.0-1
-- Initial automated build
+* Thu Apr 30 2026 Bazzite Patch <benem3000@users.noreply.github.com> - 2.0-1
+- Disabled post-install stripping to preserve MOK signatures
+- Set installation path to /extra/ as requested
