@@ -5,8 +5,7 @@ Version:        2.0
 Release:        %{?build_tag}%{!?build_tag:1}%{?dist}
 Summary:        Patched mac80211 kernel module for 4x4 AP compatibility
 License:        GPLv2
-
-Source0:        mac80211-mcs-bypass.patch
+Source0:        mac80211-mcsfix.patch
 Source1:        public_key.der
 
 BuildRequires:  make, gcc, kernel-devel, curl, xz, binutils, zstd, patch
@@ -23,7 +22,6 @@ curl -sLO "$URL"
 
 tar -xJf "linux-${KVER_BASE}.tar.xz" --strip-components=1 "linux-${KVER_BASE}/net/mac80211" "linux-${KVER_BASE}/include"
 
-# Apply the unified diff patch directly to the kernel source
 patch -p1 < %{SOURCE0}
 
 %build
@@ -42,10 +40,7 @@ if [[ -z "$SIGN_FILE_PATH" ]]; then
     exit 1
 fi
 
-# Install the module
 install -m 755 net/mac80211/mac80211.ko %{buildroot}/lib/modules/%{kversion}/updates/net/mac80211/mac80211.ko
-
-# Install the public key so the user can easily enroll it
 install -m 644 %{SOURCE1} %{buildroot}/usr/share/mcspatched/public_key.der
 
 %files
