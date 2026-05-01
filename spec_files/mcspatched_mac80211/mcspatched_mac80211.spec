@@ -12,10 +12,10 @@ BuildRequires:  make, gcc, kernel-devel, curl, xz, binutils, zstd, cpio
 A dynamically patched mac80211 kernel module to skip basic MCS set validation.
 
 %prep
-KERNEL_PKG=$(rpm -q kernel-core)
-dnf download --source --enablerepo='*source*' ${KERNEL_PKG}
+KVER_NVR=$(echo "%{kversion}" | sed 's/\.[^.]*$//')
+dnf download -y --source --enablerepo='*source*' kernel-${KVER_NVR}
 
-rpm2cpio *.src.rpm | cpio -idmv
+rpm2cpio kernel-${KVER_NVR}*.src.rpm | cpio -idmv
 
 tar -xJf linux-*.tar.xz --strip-components=1 "linux-*/net/mac80211" "linux-*/include"
 
@@ -63,9 +63,8 @@ install -m 755 net/mac80211/mac80211.ko.zst %{buildroot}/lib/modules/%{kversion}
 
 %changelog
 * Fri May 01 2026 Bazzite Patch <benem3000@users.noreply.github.com> - 2.0-2
-- Fixed SRPM filename and Koji architecture parameter mismatch
-- Migrated to Fedora Koji sources to ensure strict ABI compatibility
+- Migrated to dnf dynamic source downloads to ensure strict ABI compatibility
+- Moved module installation to /updates to natively prioritize over stock modules
 - Added mandatory zstd module compression
 - Manually stripped debug symbols to fix binary bloat and boot loader rejection
-- Mirrored kernel directory structure under /extra for improved priority
 - Set module permissions to 755 to match stock modules
