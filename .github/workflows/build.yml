@@ -36,7 +36,7 @@ jobs:
           if [[ "$GITHUB_EVENT_NAME" == "workflow_dispatch" ]] || [[ "$GITHUB_EVENT_NAME" == "push" ]]; then
             echo "should_build=true" >> $GITHUB_OUTPUT
             echo "tag=${BAZZITE_VER}-r${{ github.run_number }}" >> $GITHUB_OUTPUT
-          elif [[ "$LATEST_RELEASE" == "$BAZZITE_VER"* ]]; then
+          elif echo "$LATEST_RELEASE" | grep -q "^$BAZZITE_VER"; then
             echo "should_build=false" >> $GITHUB_OUTPUT
           else
             echo "should_build=true" >> $GITHUB_OUTPUT
@@ -126,9 +126,9 @@ jobs:
           REPO=ghcr.io/${{ github.repository_owner }}/mac80211-carrier
           
           podman pull $REPO:$TAG
-          podman create --name temp_carrier $REPO:$TAG true
-          podman cp temp_carrier:/rpms/mac80211-kmod.rpm .
-          podman rm temp_carrier
+          CONTAINER_ID=$(podman create $REPO:$TAG true)
+          podman cp $CONTAINER_ID:/rpms/mac80211-kmod.rpm .
+          podman rm -f $CONTAINER_ID
 
       - name: Create Release
         uses: softprops/action-gh-release@v2
