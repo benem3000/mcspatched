@@ -12,11 +12,14 @@ BuildRequires:  make, gcc, kernel-devel, curl, xz, binutils, koji, zstd, cpio
 A dynamically patched mac80211 kernel module to skip basic MCS set validation.
 
 %prep
+# Strip the architecture suffix (e.g., .x86_64) to get the exact NVR for Koji
+KVER_NVR=$(echo "%{kversion}" | sed 's/\.[^.]*$//')
+
 # Download the exact SRPM for your active kernel from Fedora Koji
-koji download-build --arch=src kernel-%{kversion}
+koji download-build --arch=src kernel-${KVER_NVR}
 
 # Extract the SRPM, then extract the specific directories from the tarball inside
-rpm2cpio kernel-%{kversion}.src.rpm | cpio -idmv
+rpm2cpio kernel-${KVER_NVR}.src.rpm | cpio -idmv
 tar -xJf linux-*.tar.xz --strip-components=1 "linux-*/net/mac80211" "linux-*/include"
 
 TARGET="net/mac80211/mlme.c"
@@ -69,6 +72,7 @@ echo "override mac80211 * extra/net/mac80211" > %{buildroot}/usr/lib/depmod.d/ma
 
 %changelog
 * Fri May 01 2026 Bazzite Patch <benem3000@users.noreply.github.com> - 2.0-2
+- Fixed SRPM filename and Koji architecture parameter mismatch
 - Migrated to Fedora Koji sources to ensure strict ABI compatibility
 - Added mandatory zstd module compression
 - Manually stripped debug symbols to fix binary bloat and boot loader rejection
