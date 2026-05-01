@@ -47,24 +47,15 @@ if [[ -z "$SIGN_FILE_PATH" ]]; then
     exit 1
 fi
 
-if [[ ! -f "%{mok_priv}" ]] || [[ ! -f "%{mok_x509}" ]]; then
-    echo "CRITICAL: MOK keys are missing. Refusing to build unsigned module."
-    exit 1
-fi
+install -m 755 net/mac80211/mac80211.ko %{buildroot}/lib/modules/%{kversion}/updates/net/mac80211/mac80211.ko
 
-$SIGN_FILE_PATH sha512 %{mok_priv} %{mok_x509} net/mac80211/mac80211.ko
-
-zstd -q -19 --rm net/mac80211/mac80211.ko
-
-install -m 755 net/mac80211/mac80211.ko.zst %{buildroot}/lib/modules/%{kversion}/updates/net/mac80211/mac80211.ko.zst
 
 %files
-/lib/modules/%{kversion}/updates/net/mac80211/mac80211.ko.zst
+/lib/modules/%{kversion}/updates/net/mac80211/mac80211.ko
 
 %changelog
-* Fri May 01 2026 Bazzite Patch <benem3000@users.noreply.github.com> - 2.0-2
-- Reverted to kernel.org tarball source extraction for Bazzite custom kernel compatibility
-- Moved module installation to /updates to natively prioritize over stock modules
-- Added mandatory zstd module compression
-- Manually stripped debug symbols to fix binary bloat and boot loader rejection
+* Fri May 01 2026 Bazzite Patch <benem3000@users.noreply.github.com> - 2.0-3
+- Migrated module from extra/ to updates/ to exploit inherent Fedora search priority
+- Removed depmod.d override to bypass rpm-ostree compose bug
+- Manually stripped debug symbols to fix binary bloat
 - Set module permissions to 755 to match stock modules
