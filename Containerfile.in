@@ -10,8 +10,10 @@ COPY signing_key.x509 /tmp/signing_key.x509
 RUN --mount=type=secret,id=mok_priv \
     KVER=$(rpm -q kernel-core --queryformat '%{VERSION}-%{RELEASE}.%{ARCH}' | head -n 1) && \
     dnf install -y rpm-build make gcc kernel-devel-$KVER curl xz openssl coreutils gnupg2 zstd koji cpio && \
-    mkdir -p /rpms /rpmbuild && \
-    rpmbuild -bb /tmp/spec_files/mcspatched_mac80211/mcspatched_mac80211.spec \
+    mkdir -p /rpms /rpmbuild/SOURCES && \
+    cp /tmp/spec_files/mac80211_mcsfix/mac80211-mcsfix.patch /rpmbuild/SOURCES/ && \
+    openssl x509 -in /tmp/signing_key.x509 -outform DER -out /rpmbuild/SOURCES/public_key.der && \
+    rpmbuild -bb /tmp/spec_files/mac80211_mcsfix/mac80211_mcsfix.spec \
       --define '_topdir /rpmbuild' \
       --define '_rpmdir /rpms' \
       --define 'mok_priv /run/secrets/mok_priv' \
