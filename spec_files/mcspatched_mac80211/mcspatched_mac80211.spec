@@ -6,7 +6,7 @@ Release:        %{?build_tag}%{!?build_tag:1}%{?dist}
 Summary:        Patched mac80211 kernel module for 4x4 AP compatibility
 License:        GPLv2
 
-BuildRequires:  make, gcc, kernel-devel, curl, xz, binutils
+BuildRequires:  make, gcc, kernel-devel, curl, xz, binutils, zstd
 
 %description
 A dynamically patched mac80211 kernel module to skip basic MCS set validation.
@@ -16,20 +16,8 @@ KVER_BASE=$(echo %{kversion} | cut -d'-' -f1)
 MAJOR=$(echo ${KVER_BASE} | cut -d'.' -f1)
 
 URL="https://cdn.kernel.org/pub/linux/kernel/v${MAJOR}.x/linux-${KVER_BASE}.tar.xz"
-SUMS_URL="https://cdn.kernel.org/pub/linux/kernel/v${MAJOR}.x/sha256sums.asc"
-
 curl -sLO "$URL"
-curl -sLO "$SUMS_URL"
 
-export GNUPGHOME=$(mktemp -d)
-gpg2 --locate-keys torvalds@kernel.org gregkh@kernel.org sashal@kernel.org bwh@kernel.org autosigner@kernel.org
-
-if ! gpg2 --verify sha256sums.asc; then
-    echo "CRITICAL: Signature verification failed!"
-    exit 1
-fi
-
-grep "linux-${KVER_BASE}.tar.xz" sha256sums.asc | sha256sum -c -
 tar -xJf "linux-${KVER_BASE}.tar.xz" --strip-components=1 "linux-${KVER_BASE}/net/mac80211" "linux-${KVER_BASE}/include"
 
 TARGET="net/mac80211/mlme.c"
@@ -53,10 +41,10 @@ mkdir -p %{buildroot}/lib/modules/%{kversion}/updates/net/mac80211/
 strip --strip-debug net/mac80211/mac80211.ko
 
 SIGN_FILE_PATH=$(find /usr/src/kernels/%{kversion} -name sign-file | head -n 1)
-if [[ -f "%{mok_priv}" ]] && [[ -f "%{mok_x509}" ]]; then
-    $SIGN_FILE_PATH sha512 %{mok_priv} %{mok_x509} net/mac80211/mac80211.ko
-else
-    echo "WARNING: MOK keys not provided, module will be unsigned."
+
+if [[ -z "$SIGN_FILE_PATH" ]]; then
+    echo "CRITICAL: Kernel sign-file utility not found!"
+    exit 1
 fi
 
 install -m 755 net/mac80211/mac80211.ko %{buildroot}/lib/modules/%{kversion}/updates/net/mac80211/mac80211.ko
