@@ -34,7 +34,7 @@ done
 make -C /usr/src/kernels/%{kversion} M=$PWD/net/mac80211 modules
 
 %install
-mkdir -p %{buildroot}/lib/modules/%{kversion}/extra/net/mac80211/
+mkdir -p %{buildroot}/lib/modules/%{kversion}/updates/net/mac80211/
 
 strip --strip-debug net/mac80211/mac80211.ko
 
@@ -54,14 +54,11 @@ $SIGN_FILE_PATH sha512 %{mok_priv} %{mok_x509} net/mac80211/mac80211.ko
 
 zstd -q -19 --rm net/mac80211/mac80211.ko
 
-install -m 755 net/mac80211/mac80211.ko.zst %{buildroot}/lib/modules/%{kversion}/extra/net/mac80211/mac80211.ko.zst
+install -m 755 net/mac80211/mac80211.ko.zst %{buildroot}/lib/modules/%{kversion}/updates/net/mac80211/mac80211.ko.zst
 
-mkdir -p %{buildroot}/usr/lib/depmod.d
-echo "override mac80211 * extra/net/mac80211" > %{buildroot}/usr/lib/depmod.d/mac80211-patch.conf
 
 %files
-/lib/modules/%{kversion}/extra/net/mac80211/mac80211.ko.zst
-/usr/lib/depmod.d/mac80211-patch.conf
+/lib/modules/%{kversion}/updates/net/mac80211/mac80211.ko.zst
 
 %changelog
 * Fri May 01 2026 Bazzite Patch <benem3000@users.noreply.github.com> - 2.0-2
