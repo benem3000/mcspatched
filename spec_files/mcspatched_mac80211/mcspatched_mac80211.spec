@@ -12,13 +12,9 @@ BuildRequires:  make, gcc, kernel-devel, curl, xz, binutils, koji, zstd, cpio
 A dynamically patched mac80211 kernel module to skip basic MCS set validation.
 
 %prep
-# Strip the architecture suffix (e.g., .x86_64) to get the exact NVR for Koji
 KVER_NVR=$(echo "%{kversion}" | sed 's/\.[^.]*$//')
-
-# Download the exact SRPM for your active kernel from Fedora Koji
 koji download-build --arch=src kernel-${KVER_NVR}
 
-# Extract the SRPM, then extract the specific directories from the tarball inside
 rpm2cpio kernel-${KVER_NVR}.src.rpm | cpio -idmv
 tar -xJf linux-*.tar.xz --strip-components=1 "linux-*/net/mac80211" "linux-*/include"
 
@@ -54,13 +50,10 @@ if [[ ! -f "%{mok_priv}" ]] || [[ ! -f "%{mok_x509}" ]]; then
     exit 1
 fi
 
-# Sign the module
 $SIGN_FILE_PATH sha512 %{mok_priv} %{mok_x509} net/mac80211/mac80211.ko
 
-# Compress the signed module
 zstd -q -19 --rm net/mac80211/mac80211.ko
 
-# Install compressed module
 install -m 755 net/mac80211/mac80211.ko.zst %{buildroot}/lib/modules/%{kversion}/extra/net/mac80211/mac80211.ko.zst
 
 mkdir -p %{buildroot}/usr/lib/depmod.d
