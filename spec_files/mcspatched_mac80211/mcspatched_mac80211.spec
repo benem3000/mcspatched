@@ -62,7 +62,7 @@ cp net/mac80211/mac80211.ko %{buildroot}/lib/modules/%{kversion}/extra/net/mac80
 mkdir -p %{buildroot}/usr/lib/depmod.d
 echo "override mac80211 * extra" > %{buildroot}/usr/lib/depmod.d/mac80211-patch.conf
 %files
-/lib/modules/%{kversion}/extra/mac80211.ko
+/lib/modules/%{kversion}/extra/net/mac80211/mac80211.ko
 /usr/lib/depmod.d/mac80211-patch.conf
 
 %changelog
