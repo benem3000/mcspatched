@@ -7,7 +7,7 @@ image-version: latest
 
 modules:
   - type: copy
-    from: ghcr.io/benem3000/mac80211-carrier:latest
+    from: ghcr.io/benem3000/mac80211-carrier:branch
     src: /rpms/mac80211-kmod.rpm
     dest: /tmp/mac80211-kmod.rpm
 
