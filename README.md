@@ -53,7 +53,7 @@ _Ensure you have already connected to the network at least once._
 
 `nmcli connection up "YOUR_WIFI_NAME"`
 
-When your system boots back up, the patched module will be active and you should notice an improvement in speed. Wait for the system to fully start then give it a speed test or check conection speed under your wifi network's details in the taskbar.
+The patched module will be active and you should notice an improvement in speed. Give it a speed test or check conection speed under your wifi network's details in the taskbar to confirm.
 
 ## Verification
 These images are cryptographically signed. You can verify the signature by downloading the `cosign.pub` file from this repository and running the following command:
@@ -68,7 +68,7 @@ If you are still experiencing connection drops or authentication timeouts after 
 Before applying further fixes, ensure the OS is actually utilizing the bypass. Run this command:
 
 `cat /sys/module/mac80211/parameters/skip_mcs_check`
-*(If it returns `Y`, the patch is active. If it returns `N`, verify your kernel arguments. If it returns "No such file or directory", you are not booted into the custom image).*
+*(If it returns `Y`, the patch is active. If it returns `N`, verify your kernel arguments. If it returns "No such file or directory", then there is an issue with the install.).*
 
 ### 2. Disable Wi-Fi 6 (802.11ax)
 If the Intel AX210/AX1675 card is still failing to negotiate with the router, forcing the card to fall back to Wi-Fi 5 (802.11ac) often stabilizes the connection. Apply this kernel argument and reboot:
@@ -80,15 +80,7 @@ If you experience extreme lag spikes or packet loss while connected, the hardwar
 
 `sudo rpm-ostree kargs --append="iwlwifi.11n_disable=8"`
 
-### Collecting Safe Logs for Bug Reports
-If none of the above steps work and you need to submit an issue, please collect your kernel networking logs. **For your privacy, run the following command to automatically scrub your MAC addresses from the output** before uploading the text file:
-
-```bash
-sudo dmesg | grep -iE "mac80211|iwlwifi|wlp" | sed -E 's/([0-9a-fA-F]{2}:){5}[0-9a-fA-F]{2}/XX:XX:XX:XX:XX:XX/g' > safe_wifi_logs.txt
-## Removal
-```
-
-If you need to revert to the stock Wi-Fi behavior, you should unenroll the security key before leaving the custom image.
+## Uninstallation
 
 ### 1. Delete the kernel argument:
 _Note: I recommend reverting any additional kargs you may have tried while troubleshooting. 
