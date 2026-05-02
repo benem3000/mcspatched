@@ -1,0 +1,35 @@
+--- mlme.c.orig	2026-04-28 19:17:22.999992174 -0600
++++ mlme.c	2026-05-02 13:57:17.392041139 -0600
+@@ -23,6 +23,14 @@
+ #include <linux/slab.h>
+ #include <linux/export.h>
+ #include <net/mac80211.h>
++
++static unsigned int skip_mcs_check = 0;
++module_param(skip_mcs_check, uint, 0644);
++MODULE_PARM_DESC(skip_mcs_check, "Bitmask to bypass MCS verification (0=No Bypass, 1=HT, 2=VHT, 3=ALL");
++
++#define MCS_SKIP_HT  (1 << 0)
++#define MCS_SKIP_VHT (1 << 1)
++
+ #include <linux/unaligned.h>
+ 
+ #include "ieee80211_i.h"
+@@ -428,6 +436,8 @@
+ 	struct ieee80211_sta_ht_cap sta_ht_cap;
+ 	int i;
+ 
++	if (skip_mcs_check & MCS_SKIP_HT) return true;
++
+ 	if (sband->band == NL80211_BAND_6GHZ)
+ 		return true;
+ 
+@@ -468,6 +478,8 @@
+ 	u16 ap_min_req_set, sta_rx_mcs_map, sta_tx_mcs_map;
+ 	int nss;
+ 
++	if (skip_mcs_check & MCS_SKIP_VHT) return true;
++
+ 	if (sband->band != NL80211_BAND_5GHZ)
+ 		return true;
+ 
