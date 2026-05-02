@@ -1,6 +1,8 @@
 # MCSPatched &nbsp; [![Generate Kmod](https://github.com/benem3000/mcspatched/actions/workflows/build.yml/badge.svg)](https://github.com/benem3000/mcspatched/actions/workflows/build.yml)
 
 # !DO NOT USE YET UNTIL THIS COMMENT IS REMOVED!
+Huge thanks to WoodyWoodster for providing the orginal patch here: https://github.com/WoodyWoodster/mac80211-mcs-patch
+This uses a modified version to expand it to newer protocols. (VHT,HE,EHT)
 
 This repository provides a pre-compiled, toggleable kernel module for Bazzite and Fedora Atomic desktops. It bypasses basic MCS set validation to resolve Wi-Fi connectivity issues with certain 4x4 access points, such as newer Comcast gateways (XB7+).
 
