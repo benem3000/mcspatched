@@ -1,0 +1,59 @@
+--- mlme.c.orig	2026-05-01 13:18:43.380361635 -0600
++++ mlme.c	2026-05-01 13:18:43.399361225 -0600
+@@ -23,6 +23,16 @@
+ #include <linux/slab.h>
+ #include <linux/export.h>
+ #include <net/mac80211.h>
++
++static unsigned int skip_mcs_check = 0;
++module_param(skip_mcs_check, uint, 0644);
++MODULE_PARM_DESC(skip_mcs_check, "Bitmask to bypass MCS verification (1=HT, 2=VHT, 4=HE, 8=EHT)");
++
++#define MCS_SKIP_HT  (1 << 0)
++#define MCS_SKIP_VHT (1 << 1)
++#define MCS_SKIP_HE  (1 << 2)
++#define MCS_SKIP_EHT (1 << 3)
++
+ #include <linux/unaligned.h>
+ 
+ #include "ieee80211_i.h"
+@@ -348,6 +362,7 @@
+ 				    struct ieee80211_supported_band *sband,
+ 				    const struct ieee80211_ht_operation *ht_op)
+ {
++	if (skip_mcs_check & MCS_SKIP_HT) return true;
+ 	struct ieee80211_sta_ht_cap sta_ht_cap;
+ 	int i;
+
+@@ -387,6 +402,7 @@
+ 				     struct ieee80211_supported_band *sband,
+ 				     const struct ieee80211_vht_operation *vht_op)
+ {
++	if (skip_mcs_check & MCS_SKIP_VHT) return true;
+ 	struct ieee80211_sta_vht_cap sta_vht_cap;
+ 	u16 ap_min_req_set, sta_rx_mcs_map, sta_tx_mcs_map;
+ 	int nss;
+@@ -458,6 +474,7 @@
+ 				     const struct ieee80211_he_cap_elem *he_cap,
+ 				     const struct ieee80211_he_operation *he_op)
+ {
++	if (skip_mcs_check & MCS_SKIP_HE) return true;
+ 	struct ieee80211_he_mcs_nss_supp *he_mcs_nss_supp;
+ 	u16 mcs_80_map_tx, mcs_80_map_rx;
+ 	u16 ap_min_req_set;
+@@ -543,6 +560,7 @@
+ 				    struct ieee80211_supported_band *sband,
+ 				    const struct ieee80211_he_operation *he_op)
+ {
++	if (skip_mcs_check & MCS_SKIP_HE) return true;
+ 	const struct ieee80211_sta_he_cap *sta_he_cap =
+ 		ieee80211_get_he_iftype_cap_vif(sband, &sdata->vif);
+ 	u16 ap_min_req_set;
+@@ -659,6 +687,7 @@
+ 				     struct ieee80211_supported_band *sband,
+ 				     const struct ieee80211_eht_operation *eht_op)
+ {
++	if (skip_mcs_check & MCS_SKIP_EHT) return true;
+ 	const struct ieee80211_sta_he_cap *sta_he_cap =
+ 		ieee80211_get_he_iftype_cap_vif(sband, &sdata->vif);
+ 	const struct ieee80211_sta_eht_cap *sta_eht_cap =
