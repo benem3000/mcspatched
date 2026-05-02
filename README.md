@@ -22,12 +22,12 @@ Reboot your machine:
 ### 3. Instruct Bazzite to Enable the Patch
 By default, the installed module behaves exactly like the stock Fedora kernel module. To activate the MCS validation bypass, enable the toggle by appending the kernel argument:
 
-`sudo rpm-ostree kargs --append="mac80211.skip_mcs_check=1"`
+`rpm-ostree kargs --append="mac80211.skip_mcs_check=1"`
 
 ### 4. Enroll Key:
 You must instruct your firmware to trust the custom Machine Owner Key (MOK) used to sign the module. Because the key is pre-packaged in the custom image, simply run the following command to stage the public key:
 
-`sudo mokutil --import /usr/share/mcspatched/public_key.der`
+`mokutil --import /usr/share/mcspatched/public_key.der`
 
 *(You will be prompted to create a temporary password. Remember this password, as you will need it during the next boot phase.)*
 
@@ -70,12 +70,12 @@ You can verify the signature by downloading the `cosign.pub` file from this repo
 ### Disable Wi-Fi 6 (802.11ax)
 If the Intel AX210/AX1675 card is still failing to negotiate with the router, forcing the card to fall back to Wi-Fi 5 (802.11ac) often stabilizes the connection. Apply this kernel argument and reboot:
 
-`sudo rpm-ostree kargs --append="iwlwifi.disable_11ax=1"`
+`rpm-ostree kargs --append="iwlwifi.disable_11ax=1"`
 
 ### Disable 802.11n Aggregation
 If you experience extreme lag spikes or packet loss while connected, the hardware TX aggregation might be failing. You can disable it by passing the `11n_disable=8` parameter:
 
-`sudo rpm-ostree kargs --append="iwlwifi.11n_disable=8"`
+`rpm-ostree kargs --append="iwlwifi.11n_disable=8"`
 
 ## Uninstallation
 
@@ -83,16 +83,16 @@ If you experience extreme lag spikes or packet loss while connected, the hardwar
 _Note: I recommend reverting any additional kargs you may have tried while troubleshooting. 
 If you enabled other kargs, use `rpm-ostree kargs` to list your current arguments, and substitue them into the command below. Be sure that you don't remove any unrelated arguments._
 
-`sudo rpm-ostree kargs --delete="mac80211.skip_mcs_check=1"`
+`rpm-ostree kargs --delete="mac80211.skip_mcs_check=1"`
 
 For easy deletion of multiple kargs (be careful):
 
-`sudo rpm-ostree kargs --editor"`
+`rpm-ostree kargs --editor"`
 
 ### 2. Unenroll the Secure Boot Key (Optional)
 If you wish to completely remove the custom Secure Boot key from your system's firmware, run:
 
-`sudo mokutil --delete /usr/share/mcspatched/public_key.der`
+`mokutil --delete /usr/share/mcspatched/public_key.der`
 
 *(You will be prompted to create a temporary password before rebooting. In the MOKManager screen, select "Delete MOK", confirm the key details, and enter the temporary password to finalize the removal.)*
 
@@ -102,6 +102,20 @@ If you wish to completely remove the custom Secure Boot key from your system's f
 
 ### 4. Reboot your system to apply the changes.
 `systemctl reboot`
+
+## In case of emergency (break glass) (aka your internet isn't working anymore)
+
+### 1. Rollback
+   
+`rpm-ostree rollback`
+
+### 2. Reboot
+   
+`systemctl reboot`
+
+### 3. Disable automatic updates or follow uninstallation instructions
+
+### 4. File an issue on this repository
 
 ## Credits
 This is a modified version based on work by WoodyWoodster: https://github.com/WoodyWoodster/mac80211-mcs-patch
