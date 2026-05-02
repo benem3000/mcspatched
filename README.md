@@ -23,9 +23,25 @@ Reboot your machine:
 `systemctl reboot`
 
 ### 3. Instruct Bazzite to Enable the Patch
-By default, the installed module behaves exactly like the stock Fedora kernel module. To activate the MCS validation bypass, enable the toggle by appending the kernel argument:
+By default, the installed module behaves exactly like the stock kernel module.
+When setting the `mac80211.skip_mcs_check` kernel argument, use the following values. You can add the numbers together to bypass the check for multiple Wi-Fi generations simultaneously.
 
-`rpm-ostree kargs --append="mac80211.skip_mcs_check=1"`
+### MCS Bypass Bitmask Configuration
+
+| Bitmask Value | Wi-Fi Standard | Technology Name | Description |
+| :---: | :--- | :--- | :--- |
+| **`0`** | **None** | Default | MCS checks are **enabled** (Standard Kernel Behavior) |
+| **`1`** | **Wi-Fi 4** | HT | Skips MCS validation for High Throughput (802.11n) |
+| **`2`** | **Wi-Fi 5** | VHT | Skips MCS validation for Very High Throughput (802.11ac) |
+| **`4`** | **Wi-Fi 6 / 6E** | HE | Skips MCS validation for High Efficiency (802.11ax) |
+| **`8`** | **Wi-Fi 7** | EHT | Skips MCS validation for Extremely High Throughput (802.11be) |
+
+#### Common Combinations:
+_It is recommended to bypass all checks for your desired wifi spec and all lower specs. Included are the commands you would need to enter for whichever spec your card supports._
+* **`rpm-ostree kargs --append mac80211.skip_mcs_check=1`** = Wi-Fi 4 (`1`)
+* **`rpm-ostree kargs --append mac80211.skip_mcs_check=3`** = Wi-Fi 5 (`1 + 2`)
+* **`rpm-ostree kargs --append mac80211.skip_mcs_check=7`** = Wi-Fi 6 (`1 + 2 + 4`)
+* **`rpm-ostree kargs --append mac80211.skip_mcs_check=15`** = **ALL** (`1 + 2 + 4 + 8`) - *Bypasses MCS checks for all supported protocols.*
 
 ### 4. Enroll Key:
 You must instruct your firmware to trust the custom Machine Owner Key (MOK) used to sign the module. Because the key is pre-packaged in the custom image, simply run the following command to stage the public key:
