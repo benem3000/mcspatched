@@ -7,8 +7,11 @@ _Version numbers should align with Bazzite stable releases. Alternate versions f
 
 ## Installation
 
+### IMPORTANT! Please pin your current install before rebasing!
+
+`ostree admin pin 0`
+
 ### 1. Rebase to the Unsigned Image
-_Commands given are used in your terminal (Ctrl+Alt+T)_
 
 First, rebase to the unverified registry to pull down the initial image containing the proper signing keys and policies:
 
@@ -98,16 +101,19 @@ If you wish to completely remove the custom Secure Boot key from your system's f
 
 ### 3. Rebase back to standard Bazzite:
 
-`rpm-ostree rebase ostree-image-signed:docker://ghcr.io/ublue-os/bazzite:stable`
+`brh`
+
+Select rebase
 
 ### 4. Reboot your system to apply the changes.
+
 `systemctl reboot`
 
 ## In case of emergency (break glass) (aka your internet isn't working anymore)
 
-### 1. Rollback
+### 1. Use brh Rollback
    
-`rpm-ostree rollback`
+`brh`
 
 ### 2. Reboot
    
