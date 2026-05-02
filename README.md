@@ -55,6 +55,15 @@ _Ensure you have already connected to the network at least once._
 
 The patched module will be active and you should notice an improvement in speed. Give it a speed test or check conection speed under your wifi network's details in the taskbar to confirm. (Or use a more techy method if you know one)
 
+## Results
+Patch Enabled:
+
+<img width="750" height="400" alt="19147132124" src="https://github.com/user-attachments/assets/cd52f2e7-0efd-4587-82f4-0b44093efcdc" />
+
+Patch Disabled:
+
+<img width="750" height="400" alt="patchdisabled" src="https://github.com/user-attachments/assets/23bfcc83-1b57-4223-b07b-90ef0441bb0d" />
+
 ## Verification
 To ensure the OS is actually utilizing the bypass. Run this command:
 
