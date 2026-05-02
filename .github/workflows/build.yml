@@ -32,15 +32,20 @@ jobs:
           
           echo "Upstream Bazzite Version: $BAZZITE_VER"
           echo "Local Latest Release: $LATEST_RELEASE"
+
+          BRANCH=$(echo "${{ github.ref_name }}" | sed 's/\//-/g')
+          TAG="${BAZZITE_VER}-r${{ github.run_number }}-${BRANCH}"
+
+          echo "Full Tag: $TAG"
           
           if [[ "$GITHUB_EVENT_NAME" == "workflow_dispatch" ]] || [[ "$GITHUB_EVENT_NAME" == "push" ]]; then
             echo "should_build=true" >> $GITHUB_OUTPUT
-            echo "tag=${BAZZITE_VER}-r${{ github.run_number }}" >> $GITHUB_OUTPUT
+            echo "tag=$TAG" >> $GITHUB_OUTPUT
           elif echo "$LATEST_RELEASE" | grep -q "^$BAZZITE_VER"; then
             echo "should_build=false" >> $GITHUB_OUTPUT
           else
             echo "should_build=true" >> $GITHUB_OUTPUT
-            echo "tag=${BAZZITE_VER}-r${{ github.run_number }}" >> $GITHUB_OUTPUT
+            echo "tag=$TAG" >> $GITHUB_OUTPUT
           fi
 
   build-carrier:
@@ -119,6 +124,7 @@ jobs:
         with:
           tag_name: ${{ needs.check-version.outputs.tag }}
           name: Release ${{ needs.check-version.outputs.tag }}
+          prerelease: ${{ github.ref_name != 'main' }}
           body: |
             Automated build of the patched mac80211 kernel module for Bazzite.
             Target Kernel: Latest Bazzite Stable
