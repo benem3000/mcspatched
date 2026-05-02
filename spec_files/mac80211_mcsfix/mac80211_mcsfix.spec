@@ -39,7 +39,7 @@ patch -d net/mac80211 -p0 < %{SOURCE0} || exit 1
 make -C /usr/src/kernels/%{kversion} M=$PWD/net/mac80211 modules
 
 %install
-mkdir -p %{buildroot}/lib/modules/%{kversion}/updates/net/mac80211/
+mkdir -p %{buildroot}/lib/modules/%{kversion}/extra/
 mkdir -p %{buildroot}/usr/share/mcspatched/
 mkdir -p %{buildroot}/usr/lib/depmod.d/
 
@@ -54,17 +54,16 @@ fi
 
 "$SIGN_FILE_PATH" sha512 %{mok_priv} %{mok_x509} net/mac80211/mac80211.ko
 
-echo "override mac80211 * updates" > %{buildroot}/usr/lib/depmod.d/mcspatched.conf
+echo "override mac80211 * extra" > %{buildroot}/usr/lib/depmod.d/mcspatched.conf
 
-install -m 755 net/mac80211/mac80211.ko %{buildroot}/lib/modules/%{kversion}/updates/net/mac80211/mac80211.ko
+install -m 755 net/mac80211/mac80211.ko %{buildroot}/lib/modules/%{kversion}/extra/mac80211.ko
 install -m 644 %{SOURCE1} %{buildroot}/usr/share/mcspatched/public_key.der
 
 %files
-/lib/modules/%{kversion}/updates/net/mac80211/mac80211.ko
+/lib/modules/%{kversion}/extra/mac80211.ko
 /usr/share/mcspatched/public_key.der
 /usr/lib/depmod.d/mcspatched.conf
 
 %changelog
-* Fri May 01 2026 Bazzite Patch <benem3000@users.noreply.github.com> - 2.0-5
-- Bundled public_key.der directly into the RPM for seamless mokutil enrollment
-- Added signing and depmod override which should hopefully restore functionality.
+* Fri May 01 2026 Bazzite Patch <benem3000@users.noreply.github.com> - 2.0-6
+- Moved module to 'extra' path and updated depmod override for higher priority
