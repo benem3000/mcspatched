@@ -43,8 +43,8 @@ _It is recommended to bypass all checks for your desired wifi spec and all lower
 * **`rpm-ostree kargs --append mac80211.skip_mcs_check=7`** = Wi-Fi 6 (`1 + 2 + 4`)
 * **`rpm-ostree kargs --append mac80211.skip_mcs_check=15`** = **ALL** (`1 + 2 + 4 + 8`) - *Bypasses MCS checks for all supported protocols.*
 
-### 4. Enroll Key:
-You must instruct your firmware to trust the custom Machine Owner Key (MOK) used to sign the module. Because the key is pre-packaged in the custom image, simply run the following command to stage the public key:
+### 4. Enroll Key (Required only if using Secure Boot):
+If using Secure Boot you must instruct your firmware to trust the custom Machine Owner Key (MOK) used to sign the module. Because the key is pre-packaged in the custom image, simply run the following command to stage the public key:
 
 `mokutil --import /usr/share/mcspatched/public_key.der`
 
