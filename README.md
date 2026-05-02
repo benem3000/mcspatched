@@ -1,12 +1,5 @@
 # MCSPatched-Bazzite &nbsp; [![Generate Kmod](https://github.com/benem3000/mcspatched/actions/workflows/build.yml/badge.svg)](https://github.com/benem3000/mcspatched/actions/workflows/build.yml)
 
-Huge thanks to WoodyWoodster for providing the orginal patch here: https://github.com/WoodyWoodster/mac80211-mcs-patch
-This uses a modified version to expand it to newer protocols. (VHT,HE,EHT)
-
-This repository provides a pre-compiled, toggleable kernel module for Bazzite and Fedora Atomic desktops. It bypasses basic MCS set validation to resolve Wi-Fi connectivity issues with certain 4x4 access points, such as newer Comcast gateways (XB7+).
-
-The patch is disabled by default and must be explicitly enabled after installation.
-
 ## Installation
 
 To ensure your system properly imports the signing keys and policies, there is a two-step rebase process.
@@ -54,7 +47,7 @@ _Ensure you have already connected to the network at least once._
 
 `nmcli connection up "YOUR_WIFI_NAME"`
 
-The patched module will be active and you should notice an improvement in speed. Give it a speed test or check conection speed under your wifi network's details in the taskbar to confirm.
+The patched module will be active and you should notice an improvement in speed. Give it a speed test or check conection speed under your wifi network's details in the taskbar to confirm. (Or use a more techy method if you know one)
 
 ## Verification
 These images are cryptographically signed. You can verify the signature by downloading the `cosign.pub` file from this repository and running the following command:
@@ -62,8 +55,6 @@ These images are cryptographically signed. You can verify the signature by downl
 `cosign verify --key cosign.pub ghcr.io/benem3000/mcspatched-bazzite`
 
 ## Common Issues and Troubleshooting
-
-If you are still experiencing connection drops or authentication timeouts after enabling the patch, try the following fixes for Intel (`iwlwifi`) and standard Fedora/Bazzite networking stacks.
 
 ### 1. Verify the Patch is Active
 Before applying further fixes, ensure the OS is actually utilizing the bypass. Run this command:
@@ -85,9 +76,13 @@ If you experience extreme lag spikes or packet loss while connected, the hardwar
 
 ### 1. Delete the kernel argument:
 _Note: I recommend reverting any additional kargs you may have tried while troubleshooting. 
-Use `rpm-ostree kargs` to list your current arguments, and substitue them into the command below. Be sure that you don't remove any unrelated arguments, most will start with iwlwifi._
+If you enabled other kargs, use `rpm-ostree kargs` to list your current arguments, and substitue them into the command below. Be sure that you don't remove any unrelated arguments._
 
 `sudo rpm-ostree kargs --delete="mac80211.skip_mcs_check=1"`
+
+For easy deletion of multiple kargs (be careful):
+
+`sudo rpm-ostree kargs --editor"`
 
 ### 2. Unenroll the Secure Boot Key (Optional)
 If you wish to completely remove the custom Secure Boot key from your system's firmware, run:
@@ -102,6 +97,13 @@ If you wish to completely remove the custom Secure Boot key from your system's f
 
 ### 4. Reboot your system to apply the changes.
 `systemctl reboot`
+
+## Credits
+Huge thanks to WoodyWoodster for providing the orginal patch here: https://github.com/WoodyWoodster/mac80211-mcs-patch
+Thank you to the BlueBuild team as well. https://github.com/blue-build
+
+ _AI Disclodure: I used Google Gemini and Github Copilot throughout much of this process. Builds and changes were reviewed and tested by myself, but my coding skills are nowhere near professional_
+_Use at your own risk, and report any bugs._
 
 ## License
 This project provides a patched version of the `mac80211` kernel module, which is part of the Linux kernel. This work is licensed under the **GNU General Public License v2.0**, consistent with the upstream Linux kernel source.
