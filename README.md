@@ -50,31 +50,33 @@ _Ensure you have already connected to the network at least once._
 The patched module will be active and you should notice an improvement in speed. Give it a speed test or check conection speed under your wifi network's details in the taskbar to confirm. (Or use a more techy method if you know one)
 
 ## Verification
-These images are cryptographically signed. You can verify the signature by downloading the `cosign.pub` file from this repository and running the following command:
+To ensure the OS is actually utilizing the bypass. Run this command:
+
+`cat /sys/module/mac80211/parameters/skip_mcs_check`
+
+*(If it returns `Y`, the patch is active. If it returns `N`, verify your kernel arguments. If it returns "No such file or directory", then there is an issue with the install.).*
+
+You can verify the signature by downloading the `cosign.pub` file from this repository and running the following command:
 
 `cosign verify --key cosign.pub ghcr.io/benem3000/mcspatched-bazzite`
 
 ## Common Issues and Troubleshooting
 
-### 1. Verify the Patch is Active
-Before applying further fixes, ensure the OS is actually utilizing the bypass. Run this command:
+### Follow recommended steps on bazzite's website: https://docs.bazzite.gg/General/issues_and_resolutions/#wi-fi-is-slow-wi-fi-lag-spikes
 
-`cat /sys/module/mac80211/parameters/skip_mcs_check`
-*(If it returns `Y`, the patch is active. If it returns `N`, verify your kernel arguments. If it returns "No such file or directory", then there is an issue with the install.).*
-
-### 2. Disable Wi-Fi 6 (802.11ax)
+### Disable Wi-Fi 6 (802.11ax)
 If the Intel AX210/AX1675 card is still failing to negotiate with the router, forcing the card to fall back to Wi-Fi 5 (802.11ac) often stabilizes the connection. Apply this kernel argument and reboot:
 
 `sudo rpm-ostree kargs --append="iwlwifi.disable_11ax=1"`
 
-### 3. Disable 802.11n Aggregation
+### Disable 802.11n Aggregation
 If you experience extreme lag spikes or packet loss while connected, the hardware TX aggregation might be failing. You can disable it by passing the `11n_disable=8` parameter:
 
 `sudo rpm-ostree kargs --append="iwlwifi.11n_disable=8"`
 
 ## Uninstallation
 
-### 1. Delete the kernel argument:
+### 1. Delete the kernel argument(s):
 _Note: I recommend reverting any additional kargs you may have tried while troubleshooting. 
 If you enabled other kargs, use `rpm-ostree kargs` to list your current arguments, and substitue them into the command below. Be sure that you don't remove any unrelated arguments._
 
@@ -99,7 +101,7 @@ If you wish to completely remove the custom Secure Boot key from your system's f
 `systemctl reboot`
 
 ## Credits
-Huge thanks to WoodyWoodster for providing the orginal patch here: https://github.com/WoodyWoodster/mac80211-mcs-patch
+This is a modified version based on work by WoodyWoodster: https://github.com/WoodyWoodster/mac80211-mcs-patch
 Thank you to the BlueBuild team as well. https://github.com/blue-build
 
  _AI Disclodure: I used Google Gemini and Github Copilot throughout much of this process. Builds and changes were reviewed and tested by myself, but my coding skills are nowhere near professional_
