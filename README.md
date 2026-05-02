@@ -1,8 +1,8 @@
 # MCSPatched-Bazzite &nbsp; [![Generate Kmod](https://github.com/benem3000/mcspatched/actions/workflows/build.yml/badge.svg)](https://github.com/benem3000/mcspatched/actions/workflows/build.yml)
 
-## Installation
+_Version numbers should align with Bazzite stable releases. Alternate versions for deck, nvidia, etc not yet available but are planned_
 
-To ensure your system properly imports the signing keys and policies, there is a two-step rebase process.
+## Installation
 
 ### 1. Rebase to the Unsigned Image
 _Commands given are used in your terminal (Ctrl+Alt+T)_
