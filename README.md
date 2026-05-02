@@ -1,7 +1,7 @@
 # MCSPatched-Bazzite, Currently in testing, use at you own risk! &nbsp; [![Generate Kmod](https://github.com/benem3000/mcspatched/actions/workflows/build.yml/badge.svg)](https://github.com/benem3000/mcspatched/actions/workflows/build.yml)
 
 
-_Version numbers should align with Bazzite stable releases. Alternate versions for deck, nvidia, etc not yet available but are planned_
+_Version numbers should align with Bazzite stable releases. Alternate versions for deck, nvidia, etc not yet available but are planned. This is intended to be a temporary solution for Bazzite users until a fix is implemented by the developers upstream._
 
 ## This is currently for desktop AMD or Intel gpus only. Gnome, steam deck, and other special versions not yet available.
 
@@ -43,12 +43,14 @@ _It is recommended to bypass all checks for your desired wifi spec and all lower
 * **`rpm-ostree kargs --append mac80211.skip_mcs_check=7`** = Wi-Fi 6 (`1 + 2 + 4`)
 * **`rpm-ostree kargs --append mac80211.skip_mcs_check=15`** = **ALL** (`1 + 2 + 4 + 8`) - *Bypasses MCS checks for all supported protocols.*
 
-### 4. Enroll Key (Required only if using Secure Boot):
+### 4. (Secure Boot Only) Enroll Key:
 If using Secure Boot you must instruct your firmware to trust the custom Machine Owner Key (MOK) used to sign the module. Because the key is pre-packaged in the custom image, simply run the following command to stage the public key:
 
 `mokutil --import /usr/share/mcspatched/public_key.der`
 
 *(You will be prompted to create a temporary password. Remember this password, as you will need it during the next boot phase.)*
+
+_If you are not using secure boot then it is not recommended to enroll they key. You will likely see a warning about an unsigned or out of tree package, this is normal. Enrolling third party MOK keys inherently carries added risk if that key were ever compromised. I have sevret scanning enabled to ensure that if this happens I will receive notice and will act accordingly to remedy the issue._
 
 ### 5. Rebase to the Signed Image
 Now that the signing keys and policies are installed from the first step, secure your system by rebasing to the cryptographically signed image:
