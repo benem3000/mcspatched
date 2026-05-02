@@ -1,6 +1,5 @@
-# MCSPatched &nbsp; [![Generate Kmod](https://github.com/benem3000/mcspatched/actions/workflows/build.yml/badge.svg)](https://github.com/benem3000/mcspatched/actions/workflows/build.yml)
+# MCSPatched-Bazzite &nbsp; [![Generate Kmod](https://github.com/benem3000/mcspatched/actions/workflows/build.yml/badge.svg)](https://github.com/benem3000/mcspatched/actions/workflows/build.yml)
 
-# !DO NOT USE YET UNTIL THIS COMMENT IS REMOVED!
 Huge thanks to WoodyWoodster for providing the orginal patch here: https://github.com/WoodyWoodster/mac80211-mcs-patch
 This uses a modified version to expand it to newer protocols. (VHT,HE,EHT)
 
