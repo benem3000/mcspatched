@@ -102,7 +102,7 @@ jobs:
 
       - name: Inject Branch into Recipe
         run: |
-          sed -i "s/branch-placeholder/${{ needs.check-version.outputs.tag }}/g" recipe.yml
+          sed -i "s/branch-placeholder/${{ needs.check-version.outputs.tag }}/g" recipe/recipe.yml
 
       - name: Build Custom Image
         uses: blue-build/github-action@v1.11
