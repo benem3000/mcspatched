@@ -1,4 +1,5 @@
-# MCSPatched-Bazzite &nbsp; [![Generate Kmod](https://github.com/benem3000/mcspatched/actions/workflows/build.yml/badge.svg)](https://github.com/benem3000/mcspatched/actions/workflows/build.yml)
+# MCSPatched-Bazzite, Currently in testing, use at you own risk! &nbsp; [![Generate Kmod](https://github.com/benem3000/mcspatched/actions/workflows/build.yml/badge.svg)](https://github.com/benem3000/mcspatched/actions/workflows/build.yml)
+
 
 _Version numbers should align with Bazzite stable releases. Alternate versions for deck, nvidia, etc not yet available but are planned_
 
