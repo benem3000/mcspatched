@@ -64,6 +64,16 @@ install -m 644 %{SOURCE1} %{buildroot}/usr/share/mcspatched/public_key.der
 /usr/share/mcspatched/public_key.der
 /usr/lib/depmod.d/mcspatched.conf
 
+%post
+depmod -a %{kversion}
+
+echo "=== VERIFYING IMAGE MODULE MAP ==="
+depmod -n %{kversion} | grep "mac80211.ko"
+echo "=================================="
+
+%postun
+depmod -a %{kversion}
+
 %changelog
-* Fri May 01 2026 Bazzite Patch <benem3000@users.noreply.github.com> - 2.0-6
-- Moved module to 'extra' path and updated depmod override for higher priority
+* Fri May 01 2026 Bazzite Patch <benem3000@users.noreply.github.com> - 2.0-7
+- Added %post script to force depmod update during image assembly
