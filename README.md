@@ -2,6 +2,8 @@
 
 _Version numbers should align with Bazzite stable releases. Alternate versions for deck, nvidia, etc not yet available but are planned_
 
+## This is currently for desktop AMD or Intel gpus only. Gnome, steam deck, and other special versions not yet available.
+
 ## Installation
 
 ### 1. Rebase to the Unsigned Image
