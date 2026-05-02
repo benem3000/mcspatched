@@ -111,6 +111,7 @@ jobs:
           cosign_private_key: ${{ secrets.SIGNING_SECRET }}
           registry_token: ${{ github.token }}
           maximize_build_space: true
+          skip_checkout: true
 
   create-release:
     name: Create GitHub Release
