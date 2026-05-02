@@ -24,24 +24,15 @@ Reboot your machine:
 
 ### 3. Instruct Bazzite to Enable the Patch
 By default, the installed module behaves exactly like the stock kernel module.
-When setting the `mac80211.skip_mcs_check` kernel argument, use the following values. You can add the numbers together to bypass the check for multiple Wi-Fi generations simultaneously.
+When setting the `mac80211.skip_mcs_check` kernel argument, use the following values.
 
-### MCS Bypass Bitmask Configuration
+Choose only one for the version your card supports:
 
-| Bitmask Value | Wi-Fi Standard | Technology Name | Description |
-| :---: | :--- | :--- | :--- |
-| **`0`** | **None** | Default | MCS checks are **enabled** (Standard Kernel Behavior) |
-| **`1`** | **Wi-Fi 4** | HT | Skips MCS validation for High Throughput (802.11n) |
-| **`2`** | **Wi-Fi 5** | VHT | Skips MCS validation for Very High Throughput (802.11ac) |
-| **`4`** | **Wi-Fi 6 / 6E** | HE | Skips MCS validation for High Efficiency (802.11ax) |
-| **`8`** | **Wi-Fi 7** | EHT | Skips MCS validation for Extremely High Throughput (802.11be) |
+* **Wifi 4 Only:** `rpm-ostree kargs --append mac80211.skip_mcs_check=1`
+* **Wifi 5 or higher:** `rpm-ostree kargs --append mac80211.skip_mcs_check=3`
 
-#### Common Combinations:
-_It is recommended to bypass all checks for your desired wifi spec and all lower specs. Included are the commands you would need to enter for whichever spec your card supports._
-* **`rpm-ostree kargs --append mac80211.skip_mcs_check=1`** = Wi-Fi 4 (`1`)
-* **`rpm-ostree kargs --append mac80211.skip_mcs_check=3`** = Wi-Fi 5 (`1 + 2`)
-* **`rpm-ostree kargs --append mac80211.skip_mcs_check=7`** = Wi-Fi 6 (`1 + 2 + 4`)
-* **`rpm-ostree kargs --append mac80211.skip_mcs_check=15`** = **ALL** (`1 + 2 + 4 + 8`) - *Bypasses MCS checks for all supported protocols.*
+_Wifi 6/6E is not affected by this particular issue, though may have other unrelated isues. Wifi 7 is not yet confirmed.
+If you see the message "required MCSes not supported, disabling HE (or EHT)" when running dmesg, then please report that issue here so I can include it in the bypass._
 
 ### 4. (Secure Boot Only) Enroll Key:
 If using Secure Boot you must instruct your firmware to trust the custom Machine Owner Key (MOK) used to sign the module. Because the key is pre-packaged in the custom image, simply run the following command to stage the public key:
@@ -50,7 +41,7 @@ If using Secure Boot you must instruct your firmware to trust the custom Machine
 
 *(You will be prompted to create a temporary password. Remember this password, as you will need it during the next boot phase.)*
 
-_If you are not using secure boot then it is not recommended to enroll they key. You will likely see a warning about an unsigned or out of tree package, this is normal. Enrolling third party MOK keys inherently carries added risk if that key were ever compromised. I have sevret scanning enabled to ensure that if this happens I will receive notice and will act accordingly to remedy the issue._
+_If you are not using secure boot then it is not recommended to enroll they key. You will likely see a warning about an unsigned or out of tree package, this is normal. Enrolling third party MOK keys inherently carries added risk if that key were ever compromised. I have secret scanning enabled to ensure that if this happens I will receive notice and will act accordingly to remedy the issue._
 
 ### 5. Rebase to the Signed Image
 Now that the signing keys and policies are installed from the first step, secure your system by rebasing to the cryptographically signed image:
@@ -59,9 +50,10 @@ Now that the signing keys and policies are installed from the first step, secure
 
 ### 6. Final Reboot
 Reboot your system one last time to apply the signed image and the kernel argument:
-You will be intercepted by a blue screen (MOKManager) during startup. Select "Enroll MOK", view the key to confirm it, and enter the temporary password you created. Once complete, select reboot to finish loading the OS.
 
 `systemctl reboot`
+
+If you enrolled the MOK key in step 4, you will be intercepted by a blue screen (MOKManager) during startup. Select "Enroll MOK", verify the key, then confirm it and enter the temporary password you created. Once complete, select reboot to finish loading the OS.
 
 ### 7. Disable Protected Management Frames (PMF)
 At the moment pmf is not compatible and will cause severe lag, ping, and speed issues. You can disable this locally via NetworkManager for your specific network by using these commands:
@@ -113,24 +105,27 @@ If you experience extreme lag spikes or packet loss while connected, the hardwar
 _Note: I recommend reverting any additional kargs you may have tried while troubleshooting. 
 If you enabled other kargs, use `rpm-ostree kargs` to list your current arguments, and substitue them into the command below. Be sure that you don't remove any unrelated arguments._
 
+Wifi 4 Only:
 `rpm-ostree kargs --delete="mac80211.skip_mcs_check=1"`
+Wifi 5 or later:
+`rpm-ostree kargs --delete="mac80211.skip_mcs_check=3"`
 
-For easy deletion of multiple kargs (be careful):
+For easy deletion of multiple kargs (be careful not to touch unrelated kargs):
 
 `rpm-ostree kargs --editor"`
 
 ### 2. Unenroll the Secure Boot Key (Optional)
-If you wish to completely remove the custom Secure Boot key from your system's firmware, run:
+If you enrolled the MOK while installing, run:
 
 `mokutil --delete /usr/share/mcspatched/public_key.der`
 
 *(You will be prompted to create a temporary password before rebooting. In the MOKManager screen, select "Delete MOK", confirm the key details, and enter the temporary password to finalize the removal.)*
 
-### 3. Rebase back to standard Bazzite:
+### 3. Rebase back to your desired Bazzite version:
 
 `brh`
 
-Select rebase
+Select rebase and follow the prompts.
 
 ### 4. Reboot your system to apply the changes.
 
@@ -142,13 +137,60 @@ Select rebase
    
 `brh`
 
+_You should still have your old image pinned if you want to easily return to stock. Otherwise you can rollback to the previous build of the patch and wait for the issue to be fixed._
+
 ### 2. Reboot
    
 `systemctl reboot`
 
-### 3. Disable automatic updates or follow uninstallation instructions
+### 3. (Optional) If you roll back to a previous patched build then disable automatic updates
 
 ### 4. File an issue on this repository
+
+## Technical Detail
+
+Certain routers, namely the XB7 or later routers from Comcast (Technicolor and Sercomm models confirmed to be affected), have a software bug that likely resulted from a copy/paste of the router capabilities into the basic MCS requirements for the older 802.11n (HT) and 802.11ac (VHT) standards. 802.11ax is not affected, 802.11be is not yet confirmed as it was disabled on my router. The Mac80211 kernel module by default adheres strictly to the ieee 802.11 standards and disables the HT and VHT capabilities when it sees these incorrect Basic MCS requirements. While thise likely differs from behavior in Windows and MacOS, it is technically the correct way to handle the situation. Some users may wish, however, to have the option to bypass this to make their wifi usable until a fix is integrated into the kernel.
+
+This patch modifies the source file mlme.c in mac80211 by first introducing a new unsigned integer paraameter, skip_mcs_check here:
+
+```
++
++
++static unsigned int skip_mcs_check = 0;
++module_param(skip_mcs_check, uint, 0644);
++MODULE_PARM_DESC(skip_mcs_check, "Bitmask to bypass MCS verification (0=No Bypass, 1=HT, 2=VHT, 3=ALL");
++
++#define MCS_SKIP_HT  (1 << 0)
++#define MCS_SKIP_VHT (1 << 1)
++
++
+```
+It then proceeds to bypass the mcs checks for the specified standards depending on the user's configuration by returning true in the following sections:
+
+
+Wifi 4 (HT)
+`ieee80211_verify_sta_ht_mcs_support`
+
+Wifi 5 (VHT)
+`ieee80211_verify_sta_vht_mcs_support`
+
+Patch adds these statements directly after the declarations:
+
+Wifi 4 (HT)
+`+	if (skip_mcs_check & MCS_SKIP_HT) return true;`
+
+Wifi 5 (VHT)
+`+	if (skip_mcs_check & MCS_SKIP_VHT) return true;`
+
+### Bitmask Table:
+
+| Bitmask Value | Wi-Fi Standard | Technology Name | Description |
+| :---: | :--- | :--- | :--- |
+| **`0`** | **None** | Default | MCS checks are **enabled** (Standard Kernel Behavior) |
+| **`1`** | **Wi-Fi 4** | HT | Skips MCS validation for High Throughput (802.11n) |
+| **`2`** | **Wi-Fi 5** | VHT | Skips MCS validation for Very High Throughput (802.11ac) |
+
+This instructs mac80211 to ignore the MCS verification and enable HT/VHT anyway until Comcast fixes their firmware or the kernel devs implement a bypass.
 
 ## Credits
 This is a modified version based on work by WoodyWoodster: https://github.com/WoodyWoodster/mac80211-mcs-patch
