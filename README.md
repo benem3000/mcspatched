@@ -1,5 +1,7 @@
-# MCSPatched-Bazzite, Currently in testing, use at you own risk! &nbsp; [![Generate Kmod](https://github.com/benem3000/mcspatched/actions/workflows/build.yml/badge.svg)](https://github.com/benem3000/mcspatched/actions/workflows/build.yml)
+# MCSPatched-Bazzite &nbsp; [![Generate Kmod](https://github.com/benem3000/mcspatched/actions/workflows/build.yml/badge.svg)](https://github.com/benem3000/mcspatched/actions/workflows/build.yml)
 
+_A kernel-level fix is currently in the works, but will take time: https://git.kernel.org/pub/scm/linux/kernel/git/wireless/wireless.git/commit/?id=711a9c018ad252b2807f85d44e1267b595644f9b_
+_My patch is logically identical as both are derived from related code in the kernel._
 
 _Version numbers should align with Bazzite stable releases. Alternate versions for deck, nvidia, etc not yet available but are planned. This is intended to be a temporary solution for Bazzite users until a fix is implemented by the developers upstream._
 
