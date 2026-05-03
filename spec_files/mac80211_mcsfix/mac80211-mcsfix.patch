@@ -1,53 +1,21 @@
---- mlme.c.orig	2026-05-01 13:18:43.380361635 -0600
-+++ mlme.c	2026-05-01 13:18:43.399361225 -0600
-@@ -23,6 +23,10 @@
- #include <linux/slab.h>
- #include <linux/export.h>
- #include <net/mac80211.h>
+--- mlme.orig.c	2026-04-28 19:17:22.999992174 -0600
++++ mlme.c	2026-05-02 19:58:16.946705060 -0600
+@@ -438,6 +438,18 @@
+ 	ieee80211_apply_htcap_overrides(sdata, &sta_ht_cap);
+ 
+ 	/*
++	 * Similar to the issue below with VHT, some APs, mainly Comcast XB7+,
++	 * are advertizing an all-F value, meaning the AP is requiring MCS
++	 * 0-76 in order to connect with HT. Connection to the affected 2.4
++	 * and 5ghz bands will fall back to legacy 802.11a/g,even if the
++	 * hardware and regulations support VHT or HE (and presumably EHT)
++	 * HT Basic MCS set cannot be used, so check only in strict mode
++	 * as is done in the VHT section.
++	 */
++	if (!ieee80211_hw_check(&sdata->local->hw, STRICT))
++		return true;
 +
-+static bool skip_mcs_check = false;
-+module_param(skip_mcs_check, bool, 0644);
-+MODULE_PARM_DESC(skip_mcs_check, "Bypass MCS verification for 4x4 router compatibility");
- #include <linux/unaligned.h>
- 
- #include "ieee80211_i.h"
-@@ -348,6 +352,7 @@
- 				    struct ieee80211_supported_band *sband,
- 				    const struct ieee80211_ht_operation *ht_op)
- {
-+	if (skip_mcs_check) return true;
- 	struct ieee80211_sta_ht_cap sta_ht_cap;
- 	int i;
- 
-@@ -387,6 +392,7 @@
- 				     struct ieee80211_supported_band *sband,
- 				     const struct ieee80211_vht_operation *vht_op)
- {
-+	if (skip_mcs_check) return true;
- 	struct ieee80211_sta_vht_cap sta_vht_cap;
- 	u16 ap_min_req_set, sta_rx_mcs_map, sta_tx_mcs_map;
- 	int nss;
-@@ -458,6 +464,7 @@
- 				     const struct ieee80211_he_cap_elem *he_cap,
- 				     const struct ieee80211_he_operation *he_op)
- {
-+	if (skip_mcs_check) return true;
- 	struct ieee80211_he_mcs_nss_supp *he_mcs_nss_supp;
- 	u16 mcs_80_map_tx, mcs_80_map_rx;
- 	u16 ap_min_req_set;
-@@ -543,6 +550,7 @@
- 				    struct ieee80211_supported_band *sband,
- 				    const struct ieee80211_he_operation *he_op)
- {
-+	if (skip_mcs_check) return true;
- 	const struct ieee80211_sta_he_cap *sta_he_cap =
- 		ieee80211_get_he_iftype_cap_vif(sband, &sdata->vif);
- 	u16 ap_min_req_set;
-@@ -659,6 +667,7 @@
- 				     struct ieee80211_supported_band *sband,
- 				     const struct ieee80211_eht_operation *eht_op)
- {
-+	if (skip_mcs_check) return true;
- 	const struct ieee80211_sta_he_cap *sta_he_cap =
- 		ieee80211_get_he_iftype_cap_vif(sband, &sdata->vif);
- 	const struct ieee80211_sta_eht_cap *sta_eht_cap =
++	/*
+ 	 * P802.11REVme/D7.0 - 6.5.4.2.4
+ 	 * ...
+ 	 * If the MLME of an HT STA receives an MLME-JOIN.request primitive

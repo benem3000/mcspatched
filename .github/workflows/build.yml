@@ -14,6 +14,7 @@ jobs:
     outputs:
       should_build: ${{ steps.compare.outputs.should_build }}
       tag: ${{ steps.compare.outputs.tag }}
+      branch: ${{ steps.compare.outputs.branch }}
     steps:
       - name: Compare Versions
         id: compare
@@ -32,15 +33,23 @@ jobs:
           
           echo "Upstream Bazzite Version: $BAZZITE_VER"
           echo "Local Latest Release: $LATEST_RELEASE"
+
+          BRANCH=$(echo "${{ github.ref_name }}" | sed 's/\//-/g')
+          TAG="${BAZZITE_VER}-r${{ github.run_number }}-${BRANCH}"
+          
+          echo "Branch: $BRANCH"
+          echo "Full Tag: $TAG"
           
           if [[ "$GITHUB_EVENT_NAME" == "workflow_dispatch" ]] || [[ "$GITHUB_EVENT_NAME" == "push" ]]; then
             echo "should_build=true" >> $GITHUB_OUTPUT
-            echo "tag=${BAZZITE_VER}-r${{ github.run_number }}" >> $GITHUB_OUTPUT
+            echo "tag=$TAG" >> $GITHUB_OUTPUT
+            echo "branch=$BRANCH" >> $GITHUB_OUTPUT
           elif echo "$LATEST_RELEASE" | grep -q "^$BAZZITE_VER"; then
             echo "should_build=false" >> $GITHUB_OUTPUT
           else
             echo "should_build=true" >> $GITHUB_OUTPUT
-            echo "tag=${BAZZITE_VER}-r${{ github.run_number }}" >> $GITHUB_OUTPUT
+            echo "tag=$TAG" >> $GITHUB_OUTPUT
+            echo "branch=$BRANCH" >> $GITHUB_OUTPUT
           fi
 
   build-carrier:
@@ -95,6 +104,11 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v6
 
+      - name: Inject Variables Into Recipe
+        run: |
+          sed -i "s/tag-placeholder/${{ needs.check-version.outputs.tag }}/g" recipes/recipe.yml
+          sed -i "s/branch-placeholder/${{ needs.check-version.outputs.branch }}/g" recipes/recipe.yml
+
       - name: Build Custom Image
         uses: blue-build/github-action@v1.11
         with:
@@ -102,6 +116,7 @@ jobs:
           cosign_private_key: ${{ secrets.SIGNING_SECRET }}
           registry_token: ${{ github.token }}
           maximize_build_space: true
+          skip_checkout: true
 
   create-release:
     name: Create GitHub Release
@@ -119,6 +134,7 @@ jobs:
         with:
           tag_name: ${{ needs.check-version.outputs.tag }}
           name: Release ${{ needs.check-version.outputs.tag }}
+          prerelease: ${{ github.ref_name != 'main' }}
           body: |
             Automated build of the patched mac80211 kernel module for Bazzite.
             Target Kernel: Latest Bazzite Stable

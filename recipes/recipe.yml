@@ -1,13 +1,14 @@
 # yaml-language-server: $schema=https://schema.blue-build.org/recipe-v1.json
 name: mcspatched-bazzite
 description: Bazzite with a toggleable mac80211 MCS validation patch.
-
+alt-tags:
+  - branch-placeholder
 base-image: ghcr.io/ublue-os/bazzite
 image-version: latest
 
 modules:
   - type: copy
-    from: ghcr.io/benem3000/mac80211-carrier:latest
+    from: ghcr.io/benem3000/mac80211-carrier:tag-placeholder
     src: /rpms/mac80211-kmod.rpm
     dest: /tmp/mac80211-kmod.rpm
 
