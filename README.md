@@ -22,19 +22,7 @@ Reboot your machine:
 
 `systemctl reboot`
 
-### 3. Instruct Bazzite to Enable the Patch
-By default, the installed module behaves exactly like the stock kernel module.
-When setting the `mac80211.skip_mcs_check` kernel argument, use the following values.
-
-Choose only one for the version your card supports:
-
-* **Wifi 4 Only:** `rpm-ostree kargs --append mac80211.skip_mcs_check=1`
-* **Wifi 5 or higher:** `rpm-ostree kargs --append mac80211.skip_mcs_check=3`
-
-_Wifi 6/6E is not affected by this particular issue, though may have other unrelated isues. Wifi 7 is not yet confirmed.
-If you see the message "required MCSes not supported, disabling HE (or EHT)" when running dmesg, then please report that issue here so I can include it in the bypass._
-
-### 4. (Secure Boot Only) Enroll Key:
+### 3. (Secure Boot Only) Enroll Key:
 If using Secure Boot you must instruct your firmware to trust the custom Machine Owner Key (MOK) used to sign the module. Because the key is pre-packaged in the custom image, simply run the following command to stage the public key:
 
 `mokutil --import /usr/share/mcspatched/public_key.der`
@@ -43,19 +31,19 @@ If using Secure Boot you must instruct your firmware to trust the custom Machine
 
 _If you are not using secure boot then it is not recommended to enroll they key. You will likely see a warning about an unsigned or out of tree package, this is normal. Enrolling third party MOK keys inherently carries added risk if that key were ever compromised. I have secret scanning enabled to ensure that if this happens I will receive notice and will act accordingly to remedy the issue._
 
-### 5. Rebase to the Signed Image
+### 4. Rebase to the Signed Image
 Now that the signing keys and policies are installed from the first step, secure your system by rebasing to the cryptographically signed image:
 
 `rpm-ostree rebase ostree-image-signed:docker://ghcr.io/benem3000/mcspatched-bazzite:latest`
 
-### 6. Final Reboot
+### 5. Final Reboot
 Reboot your system one last time to apply the signed image and the kernel argument:
 
 `systemctl reboot`
 
 If you enrolled the MOK key in step 4, you will be intercepted by a blue screen (MOKManager) during startup. Select "Enroll MOK", verify the key, then confirm it and enter the temporary password you created. Once complete, select reboot to finish loading the OS.
 
-### 7. Disable Protected Management Frames (PMF)
+### 6. Disable Protected Management Frames (PMF)
 At the moment pmf is not compatible and will cause severe lag, ping, and speed issues. You can disable this locally via NetworkManager for your specific network by using these commands:
 _Ensure you have already connected to the network at least once._
 
@@ -75,11 +63,6 @@ Patch Disabled:
 <img width="750" height="400" alt="patchdisabled" src="https://github.com/user-attachments/assets/23bfcc83-1b57-4223-b07b-90ef0441bb0d" />
 
 ## Verification
-To ensure the OS is actually utilizing the bypass. Run this command:
-
-`cat /sys/module/mac80211/parameters/skip_mcs_check`
-
-*(If it returns `Y`, the patch is active. If it returns `N`, verify your kernel arguments. If it returns "No such file or directory", then there is an issue with the install.).*
 
 You can verify the signature by downloading the `cosign.pub` file from this repository and running the following command:
 
@@ -103,16 +86,11 @@ If you experience extreme lag spikes or packet loss while connected, the hardwar
 
 ### 1. Delete the kernel argument(s):
 _Note: I recommend reverting any additional kargs you may have tried while troubleshooting. 
-If you enabled other kargs, use `rpm-ostree kargs` to list your current arguments, and substitue them into the command below. Be sure that you don't remove any unrelated arguments._
-
-Wifi 4 Only:
-`rpm-ostree kargs --delete="mac80211.skip_mcs_check=1"`
-Wifi 5 or later:
-`rpm-ostree kargs --delete="mac80211.skip_mcs_check=3"`
+Be sure that you don't remove any unrelated arguments._
 
 For easy deletion of multiple kargs (be careful not to touch unrelated kargs):
 
-`rpm-ostree kargs --editor"`
+`rpm-ostree kargs --editor`
 
 ### 2. Unenroll the Secure Boot Key (Optional)
 If you enrolled the MOK while installing, run:
@@ -148,55 +126,76 @@ _You should still have your old image pinned if you want to easily return to sto
 ### 4. File an issue on this repository
 
 ## Technical Detail
+_I'll do my best to explain this from the information I've gathered, but I'm not a specialist in this field. Just a guy trying to get his wifi working._
 
-Certain routers, namely the XB7 or later routers from Comcast (Technicolor and Sercomm models confirmed to be affected), have a software bug that likely resulted from a copy/paste of the router capabilities into the basic MCS requirements for the older 802.11n (HT) and 802.11ac (VHT) standards. 802.11ax is not affected, 802.11be is not yet confirmed as it was disabled on my router. The Mac80211 kernel module by default adheres strictly to the ieee 802.11 standards and disables the HT and VHT capabilities when it sees these incorrect Basic MCS requirements. While thise likely differs from behavior in Windows and MacOS, it is technically the correct way to handle the situation. Some users may wish, however, to have the option to bypass this to make their wifi usable until a fix is integrated into the kernel.
+Certain routers, namely the XB7 or later routers from Comcast (Technicolor and Sercomm models confirmed to be affected), have a software bug that likely resulted from a copy/paste of the router capabilities into the basic MCS requirements for the older 802.11n (HT) and 802.11ac (VHT) standards. 802.11ac and ax are not affected, 802.11be is not yet confirmed as it was disabled on my router, but there shouldn't be an issue. The Mac80211 kernel module by default adheres strictly to the ieee 802.11 standards and disables the HT capabilities when it sees these incorrect Basic MCS Set from the router. While thise likely differs from behavior in Windows and MacOS, it is technically the correct way to handle the situation. Some users may wish, however, to have the option to bypass this to make their wifi usable until a fix is integrated into the kernel.
 
-This patch modifies the source file mlme.c in mac80211 by first introducing a new unsigned integer paraameter, skip_mcs_check here:
+This patch modifies the source file mlme.c in mac80211 to align HT mcs checks with how VHT mcs checks are performed by only verifying mcs in strict mode.
+This line is what already exists in the kernel where mac80211 checks the VHT MCS set agains what the router is requiring:
 
 ```
-+
-+
-+static unsigned int skip_mcs_check = 0;
-+module_param(skip_mcs_check, uint, 0644);
-+MODULE_PARM_DESC(skip_mcs_check, "Bitmask to bypass MCS verification (0=No Bypass, 1=HT, 2=VHT, 3=ALL");
-+
-+#define MCS_SKIP_HT  (1 << 0)
-+#define MCS_SKIP_VHT (1 << 1)
-+
-+
+/*
+	 * Many APs are incorrectly advertising an all-zero value here,
+	 * which really means MCS 0-7 are required for 1-8 streams, but
+	 * they don't really mean it that way.
+	 * Some other APs are incorrectly advertising 3 spatial streams
+	 * with MCS 0-7 are required, but don't really mean it that way
+	 * and we'll connect only with HT, rather than even HE.
+	 * As a result, unfortunately the VHT basic MCS/NSS set cannot
+	 * be used at all, so check it only in strict mode.
+	 */
+	if (!ieee80211_hw_check(&sdata->local->hw, STRICT))
+		return true;
 ```
-It then proceeds to bypass the mcs checks for the specified standards depending on the user's configuration by returning true in the following sections:
+Authored by @benzea and committed by @jmberg-intel
+The initial commit can be found here: https://github.com/torvalds/linux/commit/574faa0e936d12718e2cadad11ce1e184d9e5a32
 
+My patch simply inserts the same line into the similar HT function just above it.
 
-Wifi 4 (HT)
-`ieee80211_verify_sta_ht_mcs_support`
+```
++	 * Similar to the issue below with VHT, some APs, mainly Comcast XB7+,
++	 * are advertizing an all-F value, meaning the AP is requiring MCS
++	 * 0-76 in order to connect with HT. Connection to the affected 2.4
++	 * and 5ghz bands will fall back to legacy 802.11a/g,even if the
++	 * hardware and regulations support VHT or HE (and presumably EHT)
++	 * HT Basic MCS set cannot be used, so check only in strict mode
++	 * as is done in the VHT section.
++	 */
++	if (!ieee80211_hw_check(&sdata->local->hw, STRICT))
++		return true;
+```
 
-Wifi 5 (VHT)
-`ieee80211_verify_sta_vht_mcs_support`
+This instructs mac80211 to ignore the MCS verification and enable HT anyway until Comcast fixes their firmware or the kernel devs implement a bypass. I can confirm that VHT is indeed being falsely advertised as well, but VHT is already patched in the kernel while HT is not. This is the text from the commit:
 
-Patch adds these statements directly after the declarations:
+> wifi: mac80211: add HT and VHT basic set verification
+> So far we did not verify the HT and VHT basic MCS set. However, in
+> P802.11REVme/D7.0 (6.5.4.2.4) says that the MLME-JOIN.request shall
+> return an error if the VHT and HT basic set requirements are not met.
 
-Wifi 4 (HT)
-`+	if (skip_mcs_check & MCS_SKIP_HT) return true;`
+Given broken APs, apply VHT basic MCS/NSS set checks only in
+strict mode.
 
-Wifi 5 (VHT)
-`+	if (skip_mcs_check & MCS_SKIP_VHT) return true;`
+While the VHT issue had to do with all-zero entries into the Basic MCS Set for VHT, the issue with HT is actually the opposite with all f's, but the result is functionally the same.
+HT:
 
-### Bitmask Table:
+9d 05 17 00 00 00 ff ff ff ff ff
+ff ff ff ff ff ff ff ff ff ff ff
 
-| Bitmask Value | Wi-Fi Standard | Technology Name | Description |
-| :---: | :--- | :--- | :--- |
-| **`0`** | **None** | Default | MCS checks are **enabled** (Standard Kernel Behavior) |
-| **`1`** | **Wi-Fi 4** | HT | Skips MCS validation for High Throughput (802.11n) |
-| **`2`** | **Wi-Fi 5** | VHT | Skips MCS validation for Very High Throughput (802.11ac) |
+The first few pairs are simply things like the channel, offset/width, and protection bits. The series of f's, however, is why things fail. Those are the bits that dictate the requirements that any client needs to meet in order to associate at high speed. To do this would require four spatial streams, while most wireless cards support only 2. When mac80211 receives this information from the wireless driver, it disables HT when it sees that the hardware can't meet those requirements.
 
-This instructs mac80211 to ignore the MCS verification and enable HT/VHT anyway until Comcast fixes their firmware or the kernel devs implement a bypass.
+For reference here is what this looks like in VHT:
+
+01 2a 00 00 00
+
+In this case though, the 0 represents that the client must support MCS 0-7 in the 4 TX and 4 RX streams. This issue had been fixed in early 2025 however. I can only assume that this issue is only now appearing for HT because companies have shifted their focus towards newer standards. It is likely that the router's supported MCS were simply copied and pasted into the Basic MCS Set at some point during development.
 
 ## Credits
-This is a modified version based on work by WoodyWoodster: https://github.com/WoodyWoodster/mac80211-mcs-patch
-Thank you to the BlueBuild team as well. https://github.com/blue-build
+The possiblity of a patch was first brought to my attention by WoodyWoodster: https://github.com/WoodyWoodster/mac80211-mcs-patch
+The patch has since been changed to reflect the existing kernel code which was authored by @benzea.
+Thank you to the BlueBuild team as well for the platform to release this for Bazzite users. https://github.com/blue-build
 
- _AI Disclodure: I used Google Gemini and Github Copilot throughout much of this process. Builds and changes were reviewed and tested by myself, but my coding skills are nowhere near professional_
+ _AI Disclodure: I used Google Gemini and Github Copilot throughout much of this process. Builds and changes were reviewed and tested by myself, but my coding skills are nowhere near professional._
+ _I have personally gone through and changed mlme.c by hand, ran a diff, patched the file, double checked the code was written correctly, and installed this ont my personal device._
 _Use at your own risk, and report any bugs._
 
 ## License
